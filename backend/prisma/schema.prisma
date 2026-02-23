@@ -14,15 +14,15 @@ model Evento {
   precio      Float
   urlImagen   String?
   fecha       DateTime
-  categoriaId Int
-  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId Int?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
-
 model Categoria {
   id       Int      @id @default(autoincrement())
   nombre   String   @unique
   eventos  Evento[]
 }
+
