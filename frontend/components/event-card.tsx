@@ -4,16 +4,16 @@ import Image from "next/image"
 import { CalendarDays, Tag, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useEvents } from "@/lib/event-context"
+import { useEventContext } from "@/lib/event-context"
 import { toast } from "sonner"
-import type { EventItem } from "@/lib/store"
+import type { EventItem } from "@/lib/api-client"
 
 interface EventCardProps {
   event: EventItem
 }
 
 export function EventCard({ event }: EventCardProps) {
-  const { getCategoryName, incrementInterested } = useEvents()
+  const { getCategoryName } = useEventContext()
 
   const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("es-ES", {
     day: "numeric",
@@ -27,7 +27,7 @@ export function EventCard({ event }: EventCardProps) {
   }).format(event.price)
 
   const handleInterested = () => {
-    incrementInterested(event.id)
+    // Por ahora solo mostramos el toast, el contador de interesados no se persiste
     toast.success("Has marcado tu interes en este evento")
   }
 

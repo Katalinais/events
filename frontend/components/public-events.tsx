@@ -10,11 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useEvents } from "@/lib/event-context"
+import { useEventContext } from "@/lib/event-context"
+import { useEvents } from "@/lib/hooks/use-events"
 import { EventCard } from "@/components/event-card"
 
 export function PublicEvents() {
-  const { events, categories } = useEvents()
+  const { categories } = useEventContext()
+  const { data: events = [], isLoading } = useEvents()
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
 
@@ -64,7 +66,14 @@ export function PublicEvents() {
         </Select>
       </div>
 
-      {filteredEvents.length === 0 ? (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <CalendarDays className="h-8 w-8 text-muted-foreground animate-pulse" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">Cargando eventos...</h3>
+        </div>
+      ) : filteredEvents.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
             <CalendarDays className="h-8 w-8 text-muted-foreground" />

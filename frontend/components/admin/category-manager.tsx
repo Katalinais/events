@@ -37,11 +37,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useEvents } from "@/lib/event-context"
+import { useEventContext } from "@/lib/event-context"
+import { useEvents } from "@/lib/hooks/use-events"
 import { toast } from "sonner"
 
 export function CategoryManager() {
-  const { categories, addCategory, updateCategory, deleteCategory, canDeleteCategory } = useEvents()
+  const { categories, addCategory, updateCategory, deleteCategory, canDeleteCategory } = useEventContext()
+  const { data: events = [] } = useEvents()
+  
+  const canDelete = (id: string) => {
+    return !events.some((event) => event.categoryId === id)
+  }
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null)
   const [deletingCategory, setDeletingCategory] = useState<{ id: string; name: string } | null>(null)

@@ -54,9 +54,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { useEvents } from "@/lib/event-context"
-import { toast } from "sonner"
-import type { EventItem } from "@/lib/store"
+import { useEventContext } from "@/lib/event-context"
+import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/lib/hooks/use-events"
+import type { EventItem } from "@/lib/api-client"
 
 interface EventFormData {
   name: string
@@ -85,8 +85,11 @@ const sampleImages = [
 ]
 
 export function EventManager() {
-  const { events, categories, addEvent, updateEvent, deleteEvent, getCategoryName } =
-    useEvents()
+  const { categories, getCategoryName } = useEventContext()
+  const { data: events = [] } = useEvents()
+  const createEvent = useCreateEvent()
+  const updateEvent = useUpdateEvent()
+  const deleteEvent = useDeleteEvent()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<EventItem | null>(null)
@@ -99,7 +102,6 @@ export function EventManager() {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio"
     if (!formData.date) errors.date = "La fecha es obligatoria"
-    if (!formData.categoryId) errors.categoryId = "Selecciona una categoria"
     if (!formData.imageUrl) errors.imageUrl = "Selecciona una imagen"
     if (formData.price && isNaN(Number(formData.price)))
       errors.price = "El precio debe ser un numero"
@@ -107,43 +109,53 @@ export function EventManager() {
     return Object.keys(errors).length === 0
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!validateForm()) return
-    addEvent({
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      date: formData.date,
-      categoryId: formData.categoryId,
-      imageUrl: formData.imageUrl,
-      price: formData.price ? Number(formData.price) : 0,
-    })
-    setFormData(defaultFormData)
-    setIsCreateOpen(false)
-    setFormErrors({})
-    toast.success("Evento creado correctamente")
+    try {
+      await createEvent.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        date: formData.date,
+        categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
+        imageUrl: formData.imageUrl,
+        price: formData.price ? Number(formData.price) : 0,
+      })
+      setFormData(defaultFormData)
+      setIsCreateOpen(false)
+      setFormErrors({})
+    } catch (error) {
+      // El error ya se maneja en el hook
+    }
   }
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!validateForm() || !editingEvent) return
-    updateEvent(editingEvent.id, {
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      date: formData.date,
-      categoryId: formData.categoryId,
-      imageUrl: formData.imageUrl,
-      price: formData.price ? Number(formData.price) : 0,
-    })
-    setEditingEvent(null)
-    setFormData(defaultFormData)
-    setFormErrors({})
-    toast.success("Evento actualizado correctamente")
+    try {
+      await updateEvent.mutateAsync({
+        id: editingEvent.id,
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        date: formData.date,
+        categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
+        imageUrl: formData.imageUrl,
+        price: formData.price ? Number(formData.price) : 0,
+      })
+      setEditingEvent(null)
+      setFormData(defaultFormData)
+      setFormErrors({})
+    } catch (error) {
+      // El error ya se maneja en el hook
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deletingEvent) {
-      deleteEvent(deletingEvent.id)
-      setDeletingEvent(null)
-      toast.success("Evento eliminado correctamente")
+      try {
+        await deleteEvent.mutateAsync(deletingEvent.id)
+        setDeletingEvent(null)
+      } catch (error) {
+        // El error ya se maneja en el hook
+      }
     }
   }
 
@@ -159,7 +171,7 @@ export function EventManager() {
       name: event.name,
       description: event.description,
       date: event.date,
-      categoryId: event.categoryId,
+      categoryId: event.categoryId || "none",
       imageUrl: event.imageUrl,
       price: event.price.toString(),
     })
@@ -228,17 +240,16 @@ export function EventManager() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="event-category">
-            Categoria <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="event-category">Categoria</Label>
           <Select
-            value={formData.categoryId}
-            onValueChange={(v) => updateField("categoryId", v)}
+            value={formData.categoryId || "none"}
+            onValueChange={(v) => updateField("categoryId", v === "none" ? "" : v)}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona categoria" />
+              <SelectValue placeholder="Selecciona categoria (opcional)" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">Sin categoria</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
@@ -246,17 +257,11 @@ export function EventManager() {
               ))}
             </SelectContent>
           </Select>
-          {formErrors.categoryId && (
-            <p className="flex items-center gap-1 text-sm text-destructive">
-              <AlertCircle className="h-3.5 w-3.5" />
-              {formErrors.categoryId}
-            </p>
-          )}
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="event-price">Precio (USD)</Label>
+        <Label htmlFor="event-price">Precio(COP)</Label>
         <Input
           id="event-price"
           type="number"

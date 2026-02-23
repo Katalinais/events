@@ -4,10 +4,12 @@ import { BarChart3, CalendarDays, Heart, Tag } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CategoryManager } from "@/components/admin/category-manager"
 import { EventManager } from "@/components/admin/event-manager"
-import { useEvents } from "@/lib/event-context"
+import { useEventContext } from "@/lib/event-context"
+import { useEvents } from "@/lib/hooks/use-events"
 
 export function AdminDashboard() {
-  const { events, categories } = useEvents()
+  const { categories } = useEventContext()
+  const { data: events = [] } = useEvents()
 
   const totalInterested = events.reduce((sum, evt) => sum + evt.interested, 0)
   const topEvent = events.reduce(

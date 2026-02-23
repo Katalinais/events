@@ -3,22 +3,16 @@
 import React, { createContext, useContext, useState, useCallback } from "react"
 import {
   type Category,
-  type EventItem,
   initialCategories,
-  initialEvents,
 } from "@/lib/store"
+import { useEvents as useEventsQuery } from "@/lib/hooks/use-events"
 
 interface EventContextType {
   categories: Category[]
-  events: EventItem[]
   addCategory: (name: string) => void
   updateCategory: (id: string, name: string) => void
   deleteCategory: (id: string) => boolean
   canDeleteCategory: (id: string) => boolean
-  addEvent: (event: Omit<EventItem, "id" | "interested">) => void
-  updateEvent: (id: string, event: Partial<EventItem>) => void
-  deleteEvent: (id: string) => void
-  incrementInterested: (id: string) => void
   getCategoryName: (categoryId: string) => string
 }
 
@@ -26,7 +20,9 @@ const EventContext = createContext<EventContextType | undefined>(undefined)
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>(initialCategories)
-  const [events, setEvents] = useState<EventItem[]>(initialEvents)
+  
+  // Usar React Query para obtener eventos
+  const { data: events = [] } = useEventsQuery()
 
   const addCategory = useCallback((name: string) => {
     const newCategory: Category = {
@@ -44,7 +40,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
 
   const canDeleteCategory = useCallback(
     (id: string) => {
-      return !events.some((event) => event.categoryId === id)
+      return !events.some((event: { categoryId: string }) => event.categoryId === id)
     },
     [events]
   )
@@ -58,38 +54,6 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     [canDeleteCategory]
   )
 
-  const addEvent = useCallback(
-    (event: Omit<EventItem, "id" | "interested">) => {
-      const newEvent: EventItem = {
-        ...event,
-        id: `evt-${Date.now()}`,
-        interested: 0,
-      }
-      setEvents((prev) => [...prev, newEvent])
-    },
-    []
-  )
-
-  const updateEvent = useCallback(
-    (id: string, eventData: Partial<EventItem>) => {
-      setEvents((prev) =>
-        prev.map((evt) => (evt.id === id ? { ...evt, ...eventData } : evt))
-      )
-    },
-    []
-  )
-
-  const deleteEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.filter((evt) => evt.id !== id))
-  }, [])
-
-  const incrementInterested = useCallback((id: string) => {
-    setEvents((prev) =>
-      prev.map((evt) =>
-        evt.id === id ? { ...evt, interested: evt.interested + 1 } : evt
-      )
-    )
-  }, [])
 
   const getCategoryName = useCallback(
     (categoryId: string) => {
@@ -102,15 +66,10 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     <EventContext.Provider
       value={{
         categories,
-        events,
         addCategory,
         updateCategory,
         deleteCategory,
         canDeleteCategory,
-        addEvent,
-        updateEvent,
-        deleteEvent,
-        incrementInterested,
         getCategoryName,
       }}
     >
@@ -119,10 +78,10 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useEvents() {
+export function useEventContext() {
   const context = useContext(EventContext)
   if (!context) {
-    throw new Error("useEvents must be used within an EventProvider")
+    throw new Error("useEventContext must be used within an EventProvider")
   }
   return context
 }
