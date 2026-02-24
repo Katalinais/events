@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Image from "next/image"
 import {
   Plus,
@@ -56,7 +56,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useEventContext } from "@/lib/event-context"
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/lib/hooks/use-events"
-import type { EventItem } from "@/lib/api-client"
+import { uploadEventImage, type EventItem } from "@/lib/api-client"
+import { toast } from "sonner"
 
 interface EventFormData {
   name: string
@@ -76,14 +77,6 @@ const defaultFormData: EventFormData = {
   price: "",
 }
 
-const sampleImages = [
-  "/images/event-music.jpg",
-  "/images/event-tech.jpg",
-  "/images/event-food.jpg",
-  "/images/event-art.jpg",
-  "/images/event-sports.jpg",
-]
-
 export function EventManager() {
   const { categories, getCategoryName } = useEventContext()
   const { data: events = [] } = useEvents()
@@ -95,6 +88,9 @@ export function EventManager() {
   const [deletingEvent, setDeletingEvent] = useState<EventItem | null>(null)
   const [formData, setFormData] = useState<EventFormData>(defaultFormData)
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof EventFormData, string>>>({})
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const imagePreviewUrlRef = useRef<string | null>(null)
 
   const sortedEvents = [...events].sort((a, b) => b.interested - a.interested)
 
@@ -102,7 +98,7 @@ export function EventManager() {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio"
     if (!formData.date) errors.date = "La fecha es obligatoria"
-    if (!formData.imageUrl) errors.imageUrl = "Selecciona una imagen"
+    if (!imageFile && !formData.imageUrl) errors.imageUrl = "Sube una imagen"
     if (formData.price && isNaN(Number(formData.price)))
       errors.price = "El precio debe ser un numero"
     setFormErrors(errors)
@@ -111,40 +107,66 @@ export function EventManager() {
 
   const handleCreate = async () => {
     if (!validateForm()) return
+    setIsSubmitting(true)
     try {
+      let imageUrl = formData.imageUrl
+      if (imageFile) {
+        imageUrl = await uploadEventImage(imageFile)
+      }
       await createEvent.mutateAsync({
         name: formData.name.trim(),
         description: formData.description.trim(),
         date: formData.date,
         categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
-        imageUrl: formData.imageUrl,
+        imageUrl,
         price: formData.price ? Number(formData.price) : 0,
       })
       setFormData(defaultFormData)
+      setImageFile(null)
+      if (imagePreviewUrlRef.current) {
+        URL.revokeObjectURL(imagePreviewUrlRef.current)
+        imagePreviewUrlRef.current = null
+      }
       setIsCreateOpen(false)
       setFormErrors({})
     } catch (error) {
-      // El error ya se maneja en el hook
+      const message = error instanceof Error ? error.message : "Error al crear el evento"
+      toast.error(message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleUpdate = async () => {
     if (!validateForm() || !editingEvent) return
+    setIsSubmitting(true)
     try {
+      let imageUrl = formData.imageUrl
+      if (imageFile) {
+        imageUrl = await uploadEventImage(imageFile)
+      }
       await updateEvent.mutateAsync({
         id: editingEvent.id,
         name: formData.name.trim(),
         description: formData.description.trim(),
         date: formData.date,
         categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
-        imageUrl: formData.imageUrl,
+        imageUrl,
         price: formData.price ? Number(formData.price) : 0,
       })
       setEditingEvent(null)
       setFormData(defaultFormData)
+      setImageFile(null)
+      if (imagePreviewUrlRef.current) {
+        URL.revokeObjectURL(imagePreviewUrlRef.current)
+        imagePreviewUrlRef.current = null
+      }
       setFormErrors({})
     } catch (error) {
-      // El error ya se maneja en el hook
+      const message = error instanceof Error ? error.message : "Error al actualizar el evento"
+      toast.error(message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -162,6 +184,11 @@ export function EventManager() {
   const openCreate = () => {
     setFormData(defaultFormData)
     setFormErrors({})
+    setImageFile(null)
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current)
+      imagePreviewUrlRef.current = null
+    }
     setIsCreateOpen(true)
   }
 
@@ -176,6 +203,32 @@ export function EventManager() {
       price: event.price.toString(),
     })
     setFormErrors({})
+    setImageFile(null)
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current)
+      imagePreviewUrlRef.current = null
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      setFormErrors((prev) => ({ ...prev, imageUrl: "Solo se permiten imágenes" }))
+      return
+    }
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current)
+    }
+    const url = URL.createObjectURL(file)
+    imagePreviewUrlRef.current = url
+    setImageFile(file)
+    setFormData((prev) => ({ ...prev, imageUrl: url }))
+    setFormErrors((prev) => {
+      const next = { ...prev }
+      delete next.imageUrl
+      return next
+    })
   }
 
   const updateField = (field: keyof EventFormData, value: string) => {
@@ -283,27 +336,33 @@ export function EventManager() {
         <Label>
           Imagen <span className="text-destructive">*</span>
         </Label>
-        <div className="grid grid-cols-5 gap-2">
-          {sampleImages.map((img) => (
-            <button
-              key={img}
-              type="button"
-              onClick={() => updateField("imageUrl", img)}
-              className={`relative aspect-video overflow-hidden rounded-md border-2 transition-all ${
-                formData.imageUrl === img
-                  ? "border-primary ring-2 ring-primary/30"
-                  : "border-border hover:border-primary/50"
-              }`}
-            >
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Input
+              id="event-image"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              className="cursor-pointer"
+              onChange={handleImageChange}
+            />
+            <span className="text-xs text-muted-foreground">JPEG, PNG, GIF o WebP (máx. 5 MB)</span>
+          </div>
+          {formData.imageUrl ? (
+            <div className="relative aspect-video max-w-xs overflow-hidden rounded-md border border-border">
               <Image
-                src={img}
-                alt="Imagen de evento"
+                src={formData.imageUrl}
+                alt="Vista previa"
                 fill
                 className="object-cover"
-                sizes="80px"
+                sizes="320px"
+                unoptimized={formData.imageUrl.startsWith("blob:")}
               />
-            </button>
-          ))}
+            </div>
+          ) : (
+            <div className="flex aspect-video max-w-xs items-center justify-center rounded-md border border-dashed border-border bg-muted/50">
+              <ImageIcon className="h-10 w-10 text-muted-foreground" />
+            </div>
+          )}
         </div>
         {formErrors.imageUrl && (
           <p className="flex items-center gap-1 text-sm text-destructive">
@@ -457,11 +516,16 @@ export function EventManager() {
           </DialogHeader>
           {renderForm()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button onClick={handleCreate} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Crear Evento
+            <Button
+              type="button"
+              onClick={handleCreate}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Guardando..." : "Crear Evento"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -478,11 +542,16 @@ export function EventManager() {
           </DialogHeader>
           {renderForm()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingEvent(null)}>
+            <Button variant="outline" onClick={() => setEditingEvent(null)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button onClick={handleUpdate} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Guardar Cambios
+            <Button
+              type="button"
+              onClick={handleUpdate}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>
