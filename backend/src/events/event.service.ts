@@ -22,6 +22,7 @@ export class EventService {
 
   async findAll() {
     return this.prisma.evento.findMany({
+      where: { deletedAt: null },
       orderBy: {
         fecha: 'asc',
       },
@@ -29,8 +30,8 @@ export class EventService {
   }
 
   async findOne(id: number) {
-    const evento = await this.prisma.evento.findUnique({
-      where: { id },
+    const evento = await this.prisma.evento.findFirst({
+      where: { id, deletedAt: null },
     });
 
     if (!evento) {
@@ -68,11 +69,11 @@ export class EventService {
   }
 
   async remove(id: number) {
-    // Verificar que el evento existe
     await this.findOne(id);
 
-    return this.prisma.evento.delete({
+    return this.prisma.evento.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -81,6 +82,7 @@ export class EventService {
 
     return this.prisma.evento.findMany({
       where: {
+        deletedAt: null,
         fecha: {
           gte: now,
         },
