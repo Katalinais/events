@@ -10,14 +10,51 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { EventService } from './event.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
 
+const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIMES = /\.(jpe?g|png|gif|webp)$/i;
+
 @Controller('eventos')
 export class EventController {
   constructor(private readonly eventService: EventService) {}
+
+  @Post('upload-imagen')
+  @UseInterceptors(
+    FileInterceptor('imagen', {
+      limits: { fileSize: IMAGE_MAX_SIZE },
+      fileFilter: (_req, file, cb) => {
+        const ext = extname(file.originalname).toLowerCase();
+        if (!ALLOWED_MIMES.test(ext) && !file.mimetype?.match(/\/(jpeg|jpg|png|gif|webp)$/)) {
+          cb(new BadRequestException('Solo se permiten imágenes (JPEG, PNG, GIF, WebP)'), false);
+          return;
+        }
+        cb(null, true);
+      },
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname) || '.jpg';
+          cb(null, `evento-${Date.now()}${ext}`);
+        },
+      }),
+    }),
+  )
+  uploadImagen(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No se envió ninguna imagen');
+    }
+    return { url: `/uploads/${file.filename}` };
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

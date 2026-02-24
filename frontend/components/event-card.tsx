@@ -23,11 +23,10 @@ export function EventCard({ event }: EventCardProps) {
 
   const formattedPrice = new Intl.NumberFormat("es-ES", {
     style: "currency",
-    currency: "USD",
+    currency: "COP",
   }).format(event.price)
 
   const handleInterested = () => {
-    // Por ahora solo mostramos el toast, el contador de interesados no se persiste
     toast.success("Has marcado tu interes en este evento")
   }
 
