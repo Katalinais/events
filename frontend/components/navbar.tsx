@@ -1,6 +1,7 @@
 "use client"
 
-import { CalendarDays, LayoutDashboard, Sparkles } from "lucide-react"
+import Image from "next/image"
+import { CalendarDays, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavbarProps {
@@ -13,11 +14,19 @@ export function Navbar({ currentView, onViewChange }: NavbarProps) {
     <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-            EventFlow
+          <Image
+            src="/logo.png"
+            alt="Event Management"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-lg"
+            priority
+          />
+          <span
+            className="text-xl font-bold tracking-tight text-foreground"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Event Management
           </span>
         </div>
 

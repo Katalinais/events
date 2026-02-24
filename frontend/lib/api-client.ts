@@ -1,4 +1,3 @@
-// Usar /api para que Next.js redirija al backend (evita "Cannot POST" si la petición iba al frontend)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 // Tipos del backend

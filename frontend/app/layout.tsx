@@ -10,24 +10,14 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" })
 
 export const metadata: Metadata = {
-  title: 'EventFlow - Gestion de Eventos',
+  title: 'Event Managment',
   description: 'Plataforma moderna de gestion de eventos. Descubre, organiza y gestiona eventos de forma intuitiva.',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/logo.png',
       },
     ],
-    apple: '/apple-icon.png',
   },
 }
 

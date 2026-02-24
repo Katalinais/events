@@ -390,10 +390,11 @@ export function EventManager() {
         </div>
         <Button
           onClick={openCreate}
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          size="icon"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Nuevo Evento</span>
+          <span className="sr-only">Nuevo Evento</span>
         </Button>
       </div>
 
