@@ -24,11 +24,11 @@ import { UpdateEventoDto } from './dto/update-evento.dto';
 const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIMES = /\.(jpe?g|png|gif|webp)$/i;
 
-@Controller('eventos')
+@Controller('events')
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
-  @Post('upload-imagen')
+  @Post('upload-image')
   @UseInterceptors(
     FileInterceptor('imagen', {
       limits: { fileSize: IMAGE_MAX_SIZE },
@@ -67,9 +67,15 @@ export class EventController {
     return this.eventService.findAll();
   }
 
-  @Get('proximos')
+  @Get('upcoming')
   findUpcoming(@Query('limit', new ParseIntPipe({ optional: true })) limit?: number) {
     return this.eventService.findUpcoming(limit);
+  }
+
+  @Post(':id/interested')
+  @HttpCode(HttpStatus.OK)
+  markInterested(@Param('id', ParseIntPipe) id: number) {
+    return this.eventService.markInterested(id);
   }
 
   @Get(':id')

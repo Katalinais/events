@@ -3,9 +3,23 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
 
+const USER_DEFAULT_EMAIL = 'katalina@gmail.com';
+
 @Injectable()
 export class EventService {
   constructor(private prisma: PrismaService) {}
+
+  private async getUsuarioInvitadoId(): Promise<number> {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { correo: USER_DEFAULT_EMAIL },
+    });
+    if (!usuario) {
+      throw new BadRequestException(
+        'Usuario invitado no configurado. Ejecuta: pnpm prisma:seed',
+      );
+    }
+    return usuario.id;
+  }
 
   private async ensureCategoryExists(categoriaId: number | null | undefined) {
     if (categoriaId == null) return;
@@ -19,13 +33,16 @@ export class EventService {
 
   async create(createEventoDto: CreateEventoDto) {
     await this.ensureCategoryExists(createEventoDto.categoriaId);
+    const fecha = createEventoDto.fecha?.trim()
+      ? new Date(createEventoDto.fecha)
+      : new Date();
     return this.prisma.evento.create({
       data: {
         nombre: createEventoDto.nombre,
         descripcion: createEventoDto.descripcion,
-        precio: createEventoDto.precio,
-        urlImagen: createEventoDto.urlImagen,
-        fecha: new Date(createEventoDto.fecha),
+        precio: createEventoDto.precio ?? 0,
+        urlImagen: createEventoDto.urlImagen ?? null,
+        fecha,
         categoriaId: createEventoDto.categoriaId ?? null,
       },
     });
@@ -34,15 +51,15 @@ export class EventService {
   async findAll() {
     return this.prisma.evento.findMany({
       where: { deletedAt: null },
-      orderBy: {
-        fecha: 'asc',
-      },
+      orderBy: { fecha: 'asc' },
+      include: { _count: { select: { interesados: true } } },
     });
   }
 
   async findOne(id: number) {
     const evento = await this.prisma.evento.findFirst({
       where: { id, deletedAt: null },
+      include: { _count: { select: { interesados: true } } },
     });
 
     if (!evento) {
@@ -98,14 +115,32 @@ export class EventService {
     return this.prisma.evento.findMany({
       where: {
         deletedAt: null,
-        fecha: {
-          gte: now,
-        },
+        fecha: { gte: now },
       },
-      orderBy: {
-        fecha: 'asc',
-      },
+      orderBy: { fecha: 'asc' },
       take: limit,
+      include: { _count: { select: { interesados: true } } },
     });
+  }
+
+  async markInterested(eventoId: number): Promise<{ interesados: number }> {
+    await this.findOne(eventoId);
+    const usuarioId = await this.getUsuarioInvitadoId();
+
+    try {
+      await this.prisma.usuarioInteresado.create({
+        data: { usuarioId, eventoId },
+      });
+    } catch (e: unknown) {
+      const isUniqueViolation =
+        e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002';
+      if (!isUniqueViolation) throw e;
+    }
+
+    const evento = await this.prisma.evento.findFirst({
+      where: { id: eventoId },
+      include: { _count: { select: { interesados: true } } },
+    });
+    return { interesados: evento!._count.interesados };
   }
 }
