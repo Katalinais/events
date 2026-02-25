@@ -31,9 +31,13 @@ model Evento {
 }
 
 model Categoria {
-  id      Int      @id @default(autoincrement())
-  nombre  String   @unique
-  eventos Evento[]
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  eventos   Evento[]
 }
 
 model Usuario {
