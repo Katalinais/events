@@ -19,5 +19,10 @@ export class CreateEventoDto {
   urlImagen?: string;
 
   @IsDateString()
-  fecha: string;
+  @IsOptional()
+  fecha?: string;
+
+  @IsNumber()
+  @IsOptional()
+  categoriaId?: number;
 }

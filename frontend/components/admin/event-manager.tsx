@@ -97,8 +97,6 @@ export function EventManager() {
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio"
-    if (!formData.date) errors.date = "La fecha es obligatoria"
-    if (!imageFile && !formData.imageUrl) errors.imageUrl = "Sube una imagen"
     if (formData.price && isNaN(Number(formData.price)))
       errors.price = "El precio debe ser un numero"
     setFormErrors(errors)
@@ -116,9 +114,9 @@ export function EventManager() {
       await createEvent.mutateAsync({
         name: formData.name.trim(),
         description: formData.description.trim(),
-        date: formData.date,
+        date: formData.date || new Date().toISOString().slice(0, 10),
         categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
-        imageUrl,
+        imageUrl: imageUrl || "",
         price: formData.price ? Number(formData.price) : 0,
       })
       setFormData(defaultFormData)
@@ -176,7 +174,6 @@ export function EventManager() {
         await deleteEvent.mutateAsync(deletingEvent.id)
         setDeletingEvent(null)
       } catch (error) {
-        // El error ya se maneja en el hook
       }
     }
   }
@@ -275,9 +272,7 @@ export function EventManager() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="event-date">
-            Fecha <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="event-date">Fecha</Label>
           <Input
             id="event-date"
             type="date"
@@ -333,9 +328,7 @@ export function EventManager() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>
-          Imagen <span className="text-destructive">*</span>
-        </Label>
+        <Label>Imagen</Label>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <Input
@@ -390,10 +383,11 @@ export function EventManager() {
         </div>
         <Button
           onClick={openCreate}
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          size="icon"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Nuevo Evento</span>
+          <span className="sr-only">Nuevo Evento</span>
         </Button>
       </div>
 
@@ -405,14 +399,13 @@ export function EventManager() {
               <TableHead>Evento</TableHead>
               <TableHead className="hidden md:table-cell">Categoria</TableHead>
               <TableHead className="hidden md:table-cell">Fecha</TableHead>
-              <TableHead className="text-center">Interesados</TableHead>
               <TableHead className="w-[100px] text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedEvents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                   No hay eventos creados.
                 </TableCell>
               </TableRow>
@@ -454,11 +447,6 @@ export function EventManager() {
                         <CalendarDays className="h-3.5 w-3.5" />
                         {formattedDate}
                       </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-semibold text-primary">
-                        {event.interested}
-                      </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">

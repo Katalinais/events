@@ -83,3 +83,19 @@ export function useDeleteEvent() {
     },
   })
 }
+
+export function useMarkInterested() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (eventId: string) => eventApi.markInterested(eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: eventKeys.upcoming() })
+      toast.success('Has marcado tu interés en este evento')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al marcar interés')
+    },
+  })
+}

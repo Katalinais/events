@@ -1,11 +1,11 @@
 "use client"
 
 import Image from "next/image"
-import { CalendarDays, Tag, Heart } from "lucide-react"
+import { CalendarDays, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useEventContext } from "@/lib/event-context"
-import { toast } from "sonner"
+import { useMarkInterested } from "@/lib/hooks/use-events"
 import type { EventItem } from "@/lib/api-client"
 
 interface EventCardProps {
@@ -14,6 +14,7 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   const { getCategoryName } = useEventContext()
+  const markInterested = useMarkInterested()
 
   const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("es-ES", {
     day: "numeric",
@@ -27,7 +28,7 @@ export function EventCard({ event }: EventCardProps) {
   }).format(event.price)
 
   const handleInterested = () => {
-    toast.success("Has marcado tu interes en este evento")
+    markInterested.mutate(event.id)
   }
 
   return (
@@ -80,10 +81,11 @@ export function EventCard({ event }: EventCardProps) {
           <Button
             size="sm"
             onClick={handleInterested}
+            disabled={markInterested.isPending}
             className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Heart className="h-3.5 w-3.5" />
-            Estoy interesado
+            {markInterested.isPending ? "..." : "Estoy interesado"}
           </Button>
         </div>
       </div>
