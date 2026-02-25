@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TipoUsuario {
+  EXTERNO
+  INVITADO
+  ADMINISTRADOR
+}
+
 model Evento {
   id          Int        @id @default(autoincrement())
   nombre      String
@@ -18,12 +24,41 @@ model Evento {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   deletedAt   DateTime?
-  
+
   categoria   Categoria? @relation(fields: [categoriaId], references: [id])
+
+  interesados UsuarioInteresado[]
 }
 
 model Categoria {
-  id      Int      @id @default(autoincrement())
-  nombre  String   @unique
-  eventos Evento[]
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  eventos   Evento[]
+}
+
+model Usuario {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  apellido  String?
+  correo    String     @unique
+  tipo      TipoUsuario
+  createdAt DateTime   @default(now())
+
+  intereses UsuarioInteresado[]
+}
+
+model UsuarioInteresado {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  eventoId  Int
+  createdAt DateTime @default(now())
+
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  evento    Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, eventoId]) 
 }
