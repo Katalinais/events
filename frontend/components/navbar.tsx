@@ -1,12 +1,14 @@
 "use client"
 
 import Image from "next/image"
-import { CalendarDays, LayoutDashboard } from "lucide-react"
+import { CalendarDays, LayoutDashboard, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+export type NavView = "public" | "gestion" | "reporte"
+
 interface NavbarProps {
-  currentView: "public" | "admin"
-  onViewChange: (view: "public" | "admin") => void
+  currentView: NavView
+  onViewChange: (view: NavView) => void
 }
 
 export function Navbar({ currentView, onViewChange }: NavbarProps) {
@@ -44,16 +46,28 @@ export function Navbar({ currentView, onViewChange }: NavbarProps) {
             <span className="hidden sm:inline">Eventos</span>
           </button>
           <button
-            onClick={() => onViewChange("admin")}
+            onClick={() => onViewChange("gestion")}
             className={cn(
               "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
-              currentView === "admin"
+              currentView === "gestion"
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <LayoutDashboard className="h-4 w-4" />
-            <span className="hidden sm:inline">Administrador</span>
+            <span className="hidden sm:inline">Gestión</span>
+          </button>
+          <button
+            onClick={() => onViewChange("reporte")}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+              currentView === "reporte"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Reporte</span>
           </button>
         </div>
       </nav>

@@ -1,6 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-// Tipos del backend - Categorías
 export interface BackendCategoria {
   id: number;
   nombre: string;
@@ -8,7 +7,6 @@ export interface BackendCategoria {
   updatedAt: string;
 }
 
-// Tipos del backend - Eventos
 export interface BackendEvento {
   id: number;
   nombre: string;
@@ -19,9 +17,9 @@ export interface BackendEvento {
   categoriaId: number | null;
   createdAt: string;
   updatedAt: string;
+  _count?: { interesados: number };
 }
 
-// Tipos del frontend
 export interface EventItem {
   id: string;
   name: string;
@@ -33,7 +31,6 @@ export interface EventItem {
   interested: number;
 }
 
-// Mapear evento del backend al frontend
 export function mapBackendToFrontend(evento: BackendEvento): EventItem {
   const imageUrl = evento.urlImagen
     ? evento.urlImagen.startsWith('http')
@@ -44,15 +41,14 @@ export function mapBackendToFrontend(evento: BackendEvento): EventItem {
     id: evento.id.toString(),
     name: evento.nombre,
     description: evento.descripcion || '',
-    date: evento.fecha.split('T')[0], // Solo la fecha sin hora
+    date: evento.fecha.split('T')[0],
     categoryId: evento.categoriaId?.toString() || '',
     imageUrl,
     price: evento.precio,
-    interested: 0, // Por ahora no manejamos esto en el backend
+    interested: evento._count?.interesados ?? 0,
   };
 }
 
-// Mapear evento del frontend al backend
 export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>): {
   nombre: string;
   descripcion?: string;
@@ -71,11 +67,10 @@ export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>
   };
 }
 
-// Subir imagen de evento (Multer). Devuelve la ruta para guardar en el evento.
 export async function uploadEventImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('imagen', file);
-  const response = await fetch(`${API_BASE_URL}/eventos/upload-imagen`, {
+  const response = await fetch(`${API_BASE_URL}/events/upload-image`, {
     method: 'POST',
     body: formData,
   });
@@ -89,7 +84,7 @@ export async function uploadEventImage(file: File): Promise<string> {
 
 export const eventApi = {
   async getEvents(): Promise<EventItem[]> {
-    const response = await fetch(`${API_BASE_URL}/eventos`);
+    const response = await fetch(`${API_BASE_URL}/events`);
     if (!response.ok) {
       throw new Error('Error al obtener eventos');
     }
@@ -98,7 +93,7 @@ export const eventApi = {
   },
 
   async getEvent(id: string): Promise<EventItem> {
-    const response = await fetch(`${API_BASE_URL}/eventos/${id}`);
+    const response = await fetch(`${API_BASE_URL}/events/${id}`);
     if (!response.ok) {
       throw new Error('Error al obtener el evento');
     }
@@ -108,7 +103,7 @@ export const eventApi = {
 
   async createEvent(event: Omit<EventItem, 'id' | 'interested'>): Promise<EventItem> {
     const payload = mapFrontendToBackend(event);
-    const response = await fetch(`${API_BASE_URL}/eventos`, {
+    const response = await fetch(`${API_BASE_URL}/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -138,7 +133,7 @@ export const eventApi = {
       updateData.categoriaId = event.categoryId ? Number(event.categoryId) : null;
     }
 
-    const response = await fetch(`${API_BASE_URL}/eventos/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/events/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -154,7 +149,7 @@ export const eventApi = {
   },
 
   async deleteEvent(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/eventos/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/events/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) {
@@ -165,8 +160,8 @@ export const eventApi = {
 
   async getUpcomingEvents(limit?: number): Promise<EventItem[]> {
     const url = limit 
-      ? `${API_BASE_URL}/eventos/proximos?limit=${limit}`
-      : `${API_BASE_URL}/eventos/proximos`;
+      ? `${API_BASE_URL}/events/upcoming?limit=${limit}`
+      : `${API_BASE_URL}/events/upcoming`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Error al obtener próximos eventos');
@@ -174,9 +169,19 @@ export const eventApi = {
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
   },
+
+  async markInterested(eventId: string): Promise<{ interesados: number }> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/interested`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al marcar interés');
+    }
+    return response.json();
+  },
 };
 
-// Tipo frontend para categoría (compatible con store/context)
 export interface CategoryItem {
   id: string;
   name: string;
@@ -188,14 +193,14 @@ export function mapCategoriaToFrontend(c: BackendCategoria): CategoryItem {
 
 export const categoryApi = {
   async getCategories(): Promise<CategoryItem[]> {
-    const response = await fetch(`${API_BASE_URL}/categorias`);
+    const response = await fetch(`${API_BASE_URL}/categories`);
     if (!response.ok) throw new Error('Error al obtener categorías');
     const data: BackendCategoria[] = await response.json();
     return data.map(mapCategoriaToFrontend);
   },
 
   async createCategory(name: string): Promise<CategoryItem> {
-    const response = await fetch(`${API_BASE_URL}/categorias`, {
+    const response = await fetch(`${API_BASE_URL}/categories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: name.trim() }),
@@ -209,7 +214,7 @@ export const categoryApi = {
   },
 
   async updateCategory(id: string, name: string): Promise<CategoryItem> {
-    const response = await fetch(`${API_BASE_URL}/categorias/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: name.trim() }),
@@ -223,7 +228,7 @@ export const categoryApi = {
   },
 
   async deleteCategory(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/categorias/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) {
