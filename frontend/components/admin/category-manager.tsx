@@ -39,12 +39,11 @@ import {
 } from "@/components/ui/tooltip"
 import { useEventContext } from "@/lib/event-context"
 import { useEvents } from "@/lib/hooks/use-events"
-import { toast } from "sonner"
 
 export function CategoryManager() {
   const { categories, addCategory, updateCategory, deleteCategory, canDeleteCategory } = useEventContext()
   const { data: events = [] } = useEvents()
-  
+
   const canDelete = (id: string) => {
     return !events.some((event) => event.categoryId === id)
   }
@@ -55,40 +54,41 @@ export function CategoryManager() {
   const [editName, setEditName] = useState("")
   const [errors, setErrors] = useState<{ create?: string; edit?: string }>({})
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newCategoryName.trim()) {
       setErrors({ create: "El nombre es obligatorio" })
       return
     }
-    addCategory(newCategoryName.trim())
-    setNewCategoryName("")
-    setIsCreateOpen(false)
-    setErrors({})
-    toast.success("Categoria creada correctamente")
+    try {
+      await addCategory(newCategoryName.trim())
+      setNewCategoryName("")
+      setIsCreateOpen(false)
+      setErrors({})
+    } catch {
+
+    }
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editName.trim()) {
       setErrors({ edit: "El nombre es obligatorio" })
       return
     }
-    if (editingCategory) {
-      updateCategory(editingCategory.id, editName.trim())
+    if (!editingCategory) return
+    try {
+      await updateCategory(editingCategory.id, editName.trim())
       setEditingCategory(null)
       setEditName("")
       setErrors({})
-      toast.success("Categoria actualizada correctamente")
+    } catch {
+    
     }
   }
 
-  const handleDelete = () => {
-    if (deletingCategory) {
-      const success = deleteCategory(deletingCategory.id)
-      if (success) {
-        toast.success("Categoria eliminada correctamente")
-      }
-      setDeletingCategory(null)
-    }
+  const handleDelete = async () => {
+    if (!deletingCategory) return
+    await deleteCategory(deletingCategory.id)
+    setDeletingCategory(null)
   }
 
   const openEdit = (category: { id: string; name: string }) => {

@@ -20,4 +20,8 @@ export class CreateEventoDto {
 
   @IsDateString()
   fecha: string;
+
+  @IsNumber()
+  @IsOptional()
+  categoriaId?: number;
 }

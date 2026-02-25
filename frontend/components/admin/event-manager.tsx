@@ -176,7 +176,6 @@ export function EventManager() {
         await deleteEvent.mutateAsync(deletingEvent.id)
         setDeletingEvent(null)
       } catch (error) {
-        // El error ya se maneja en el hook
       }
     }
   }

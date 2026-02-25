@@ -1,6 +1,14 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-// Tipos del backend
+// Tipos del backend - Categorías
+export interface BackendCategoria {
+  id: number;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Tipos del backend - Eventos
 export interface BackendEvento {
   id: number;
   nombre: string;
@@ -51,6 +59,7 @@ export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>
   precio: number;
   urlImagen?: string;
   fecha: string;
+  categoriaId?: number | null;
 } {
   return {
     nombre: event.name,
@@ -58,6 +67,7 @@ export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>
     precio: event.price,
     urlImagen: event.imageUrl || undefined,
     fecha: event.date,
+    categoriaId: event.categoryId ? Number(event.categoryId) : null,
   };
 }
 
@@ -97,12 +107,13 @@ export const eventApi = {
   },
 
   async createEvent(event: Omit<EventItem, 'id' | 'interested'>): Promise<EventItem> {
+    const payload = mapFrontendToBackend(event);
     const response = await fetch(`${API_BASE_URL}/eventos`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(mapFrontendToBackend(event)),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) {
       const error = await response.json();
@@ -113,7 +124,7 @@ export const eventApi = {
   },
 
   async updateEvent(id: string, event: Partial<Omit<EventItem, 'id' | 'interested'>>): Promise<EventItem> {
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (event.name) updateData.nombre = event.name;
     if (event.description !== undefined) updateData.descripcion = event.description;
     if (event.price !== undefined) updateData.precio = event.price;
@@ -123,6 +134,9 @@ export const eventApi = {
         : event.imageUrl;
     }
     if (event.date) updateData.fecha = event.date;
+    if (event.categoryId !== undefined) {
+      updateData.categoriaId = event.categoryId ? Number(event.categoryId) : null;
+    }
 
     const response = await fetch(`${API_BASE_URL}/eventos/${id}`, {
       method: 'PATCH',
@@ -159,5 +173,62 @@ export const eventApi = {
     }
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
+  },
+};
+
+// Tipo frontend para categoría (compatible con store/context)
+export interface CategoryItem {
+  id: string;
+  name: string;
+}
+
+export function mapCategoriaToFrontend(c: BackendCategoria): CategoryItem {
+  return { id: String(c.id), name: c.nombre };
+}
+
+export const categoryApi = {
+  async getCategories(): Promise<CategoryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/categorias`);
+    if (!response.ok) throw new Error('Error al obtener categorías');
+    const data: BackendCategoria[] = await response.json();
+    return data.map(mapCategoriaToFrontend);
+  },
+
+  async createCategory(name: string): Promise<CategoryItem> {
+    const response = await fetch(`${API_BASE_URL}/categorias`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: name.trim() }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al crear la categoría');
+    }
+    const data: BackendCategoria = await response.json();
+    return mapCategoriaToFrontend(data);
+  },
+
+  async updateCategory(id: string, name: string): Promise<CategoryItem> {
+    const response = await fetch(`${API_BASE_URL}/categorias/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: name.trim() }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al actualizar la categoría');
+    }
+    const data: BackendCategoria = await response.json();
+    return mapCategoriaToFrontend(data);
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/categorias/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al eliminar la categoría');
+    }
   },
 };

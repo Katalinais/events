@@ -29,8 +29,8 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`Aplicación corriendo en: http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Aplicación corriendo en: http://0.0.0.0:${port}`);
 }
 
 bootstrap();

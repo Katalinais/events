@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
@@ -7,7 +7,18 @@ import { UpdateEventoDto } from './dto/update-evento.dto';
 export class EventService {
   constructor(private prisma: PrismaService) {}
 
+  private async ensureCategoryExists(categoriaId: number | null | undefined) {
+    if (categoriaId == null) return;
+    const cat = await this.prisma.categoria.findFirst({
+      where: { id: categoriaId, deletedAt: null },
+    });
+    if (!cat) {
+      throw new BadRequestException(`Categoría con ID ${categoriaId} no encontrada`);
+    }
+  }
+
   async create(createEventoDto: CreateEventoDto) {
+    await this.ensureCategoryExists(createEventoDto.categoriaId);
     return this.prisma.evento.create({
       data: {
         nombre: createEventoDto.nombre,
@@ -15,7 +26,7 @@ export class EventService {
         precio: createEventoDto.precio,
         urlImagen: createEventoDto.urlImagen,
         fecha: new Date(createEventoDto.fecha),
-        categoriaId: null,
+        categoriaId: createEventoDto.categoriaId ?? null,
       },
     });
   }
@@ -43,6 +54,7 @@ export class EventService {
 
   async update(id: number, updateEventoDto: UpdateEventoDto) {
     await this.findOne(id);
+    await this.ensureCategoryExists(updateEventoDto.categoriaId);
 
     const data: any = {};
 
@@ -60,6 +72,9 @@ export class EventService {
     }
     if (updateEventoDto.fecha !== undefined) {
       data.fecha = new Date(updateEventoDto.fecha);
+    }
+    if (updateEventoDto.categoriaId !== undefined) {
+      data.categoriaId = updateEventoDto.categoriaId;
     }
 
     return this.prisma.evento.update({

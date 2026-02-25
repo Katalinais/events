@@ -21,4 +21,8 @@ export class UpdateEventoDto {
   @IsDateString()
   @IsOptional()
   fecha?: string;
+
+  @IsNumber()
+  @IsOptional()
+  categoriaId?: number | null;
 }

@@ -1,17 +1,20 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback } from "react"
-import {
-  type Category,
-  initialCategories,
-} from "@/lib/store"
+import React, { createContext, useContext, useCallback } from "react"
+import type { Category } from "@/lib/store"
 import { useEvents as useEventsQuery } from "@/lib/hooks/use-events"
+import {
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "@/lib/hooks/use-categories"
 
 interface EventContextType {
   categories: Category[]
-  addCategory: (name: string) => void
-  updateCategory: (id: string, name: string) => void
-  deleteCategory: (id: string) => boolean
+  addCategory: (name: string) => Promise<void>
+  updateCategory: (id: string, name: string) => Promise<void>
+  deleteCategory: (id: string) => Promise<boolean>
   canDeleteCategory: (id: string) => boolean
   getCategoryName: (categoryId: string) => string
 }
@@ -19,24 +22,25 @@ interface EventContextType {
 const EventContext = createContext<EventContextType | undefined>(undefined)
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
-  const [categories, setCategories] = useState<Category[]>(initialCategories)
-  
-  // Usar React Query para obtener eventos
+  const { data: categories = [] } = useCategories()
   const { data: events = [] } = useEventsQuery()
+  const createCategory = useCreateCategory()
+  const updateCategoryMutation = useUpdateCategory()
+  const deleteCategoryMutation = useDeleteCategory()
 
-  const addCategory = useCallback((name: string) => {
-    const newCategory: Category = {
-      id: `cat-${Date.now()}`,
-      name,
-    }
-    setCategories((prev) => [...prev, newCategory])
-  }, [])
+  const addCategory = useCallback(
+    async (name: string) => {
+      await createCategory.mutateAsync(name)
+    },
+    [createCategory]
+  )
 
-  const updateCategory = useCallback((id: string, name: string) => {
-    setCategories((prev) =>
-      prev.map((cat) => (cat.id === id ? { ...cat, name } : cat))
-    )
-  }, [])
+  const updateCategory = useCallback(
+    async (id: string, name: string) => {
+      await updateCategoryMutation.mutateAsync({ id, name })
+    },
+    [updateCategoryMutation]
+  )
 
   const canDeleteCategory = useCallback(
     (id: string) => {
@@ -46,14 +50,16 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   )
 
   const deleteCategory = useCallback(
-    (id: string) => {
-      if (!canDeleteCategory(id)) return false
-      setCategories((prev) => prev.filter((cat) => cat.id !== id))
-      return true
+    async (id: string) => {
+      try {
+        await deleteCategoryMutation.mutateAsync(id)
+        return true
+      } catch {
+        return false
+      }
     },
-    [canDeleteCategory]
+    [deleteCategoryMutation]
   )
-
 
   const getCategoryName = useCallback(
     (categoryId: string) => {
