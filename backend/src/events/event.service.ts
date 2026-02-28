@@ -3,23 +3,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
 
-const USER_DEFAULT_EMAIL = 'katalina@gmail.com';
-
 @Injectable()
 export class EventService {
   constructor(private prisma: PrismaService) {}
-
-  private async getUsuarioInvitadoId(): Promise<number> {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { correo: USER_DEFAULT_EMAIL },
-    });
-    if (!usuario) {
-      throw new BadRequestException(
-        'Usuario invitado no configurado. Ejecuta: pnpm prisma:seed',
-      );
-    }
-    return usuario.id;
-  }
 
   private async ensureCategoryExists(categoriaId: number | null | undefined) {
     if (categoriaId == null) return;
@@ -123,9 +109,8 @@ export class EventService {
     });
   }
 
-  async markInterested(eventoId: number): Promise<{ interesados: number }> {
+  async markInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {
     await this.findOne(eventoId);
-    const usuarioId = await this.getUsuarioInvitadoId();
 
     try {
       await this.prisma.usuarioInteresado.create({
