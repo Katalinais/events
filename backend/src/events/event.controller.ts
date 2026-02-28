@@ -13,13 +13,17 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { EventService } from './event.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIMES = /\.(jpe?g|png|gif|webp)$/i;
@@ -74,8 +78,16 @@ export class EventController {
 
   @Post(':id/interested')
   @HttpCode(HttpStatus.OK)
-  markInterested(@Param('id', ParseIntPipe) id: number) {
-    return this.eventService.markInterested(id);
+  @UseGuards(JwtAuthGuard)
+  markInterested(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user?: { userId: number } },
+  ) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException('Debes iniciar sesión para marcar interés');
+    }
+    return this.eventService.markInterested(id, userId);
   }
 
   @Get(':id')

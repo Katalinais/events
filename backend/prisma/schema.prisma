@@ -44,7 +44,9 @@ model Usuario {
   id        Int        @id @default(autoincrement())
   nombre    String
   apellido  String?
-  correo    String     @unique
+  correo    String?     @unique
+  username  String
+  password  String
   tipo      TipoUsuario
   createdAt DateTime   @default(now())
 

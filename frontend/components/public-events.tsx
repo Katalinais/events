@@ -14,7 +14,11 @@ import { useEventContext } from "@/lib/event-context"
 import { useEvents } from "@/lib/hooks/use-events"
 import { EventCard } from "@/components/event-card"
 
-export function PublicEvents() {
+interface PublicEventsProps {
+  onRequestLogin?: () => void
+}
+
+export function PublicEvents({ onRequestLogin }: PublicEventsProps) {
   const { categories } = useEventContext()
   const { data: events = [], isLoading } = useEvents()
   const [search, setSearch] = useState("")
@@ -86,7 +90,11 @@ export function PublicEvents() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard
+              key={event.id}
+              event={event}
+              onRequestLogin={onRequestLogin}
+            />
           ))}
         </div>
       )}

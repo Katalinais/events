@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, DM_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { EventProvider } from '@/lib/event-context'
+import { AuthProvider } from '@/lib/auth-context'
 import { QueryProvider } from '@/lib/query-client'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
@@ -30,10 +31,12 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.variable} ${dmSans.variable} font-sans antialiased`}>
         <QueryProvider>
-          <EventProvider>
-            {children}
-            <Toaster />
-          </EventProvider>
+          <AuthProvider>
+            <EventProvider>
+              {children}
+              <Toaster />
+            </EventProvider>
+          </AuthProvider>
         </QueryProvider>
         <Analytics />
       </body>

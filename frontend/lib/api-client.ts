@@ -1,4 +1,10 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+const getAuthHeaders = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  const token = localStorage.getItem('auth_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export interface BackendCategoria {
   id: number;
@@ -173,6 +179,7 @@ export const eventApi = {
   async markInterested(eventId: string): Promise<{ interesados: number }> {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/interested`, {
       method: 'POST',
+      headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -235,5 +242,58 @@ export const categoryApi = {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.message || 'Error al eliminar la categoría');
     }
+  },
+};
+
+export interface AuthUser {
+  id: number;
+  nombre: string;
+  correo: string | null;
+  tipo: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  usuario: AuthUser;
+}
+
+export const authApi = {
+  async register(data: {
+    nombre: string;
+    apellido?: string;
+    correo?: string;
+    username: string;
+    password: string;
+  }): Promise<LoginResponse> {
+    const body: Record<string, unknown> = {
+      nombre: data.nombre.trim(),
+      apellido: data.apellido?.trim() || undefined,
+      username: data.username.trim(),
+      password: data.password,
+    };
+    if (data.correo?.trim()) body.correo = data.correo.trim();
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al registrarse');
+    }
+    return response.json();
+  },
+
+  async login(username: string, password: string): Promise<LoginResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username.trim(), password }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Usuario o contraseña incorrectos');
+    }
+    return response.json();
   },
 };

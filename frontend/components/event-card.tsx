@@ -5,15 +5,18 @@ import { CalendarDays, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useEventContext } from "@/lib/event-context"
+import { useAuth } from "@/lib/auth-context"
 import { useMarkInterested } from "@/lib/hooks/use-events"
 import type { EventItem } from "@/lib/api-client"
 
 interface EventCardProps {
   event: EventItem
+  onRequestLogin?: () => void
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onRequestLogin }: EventCardProps) {
   const { getCategoryName } = useEventContext()
+  const { isAuthenticated } = useAuth()
   const markInterested = useMarkInterested()
 
   const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("es-ES", {
@@ -28,9 +31,16 @@ export function EventCard({ event }: EventCardProps) {
   }).format(event.price)
 
   const handleInterested = () => {
+    if (!isAuthenticated) {
+      onRequestLogin?.()
+      return
+    }
     markInterested.mutate(event.id)
   }
 
+  const interestedButtonLabel = isAuthenticated
+    ? (markInterested.isPending ? "..." : "Marcar como favorito")
+    : "Marcar como favorito"
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
       <div className="relative aspect-[16/10] overflow-hidden">
@@ -75,7 +85,7 @@ export function EventCard({ event }: EventCardProps) {
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Heart className="h-4 w-4 text-primary" />
             <span className="font-medium">{event.interested}</span>
-            <span className="hidden sm:inline">interesados</span>
+            <span className="hidden sm:inline">favoritos</span>
           </div>
 
           <Button
@@ -85,7 +95,7 @@ export function EventCard({ event }: EventCardProps) {
             className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Heart className="h-3.5 w-3.5" />
-            {markInterested.isPending ? "..." : "Estoy interesado"}
+            {interestedButtonLabel}
           </Button>
         </div>
       </div>
