@@ -1,39 +1,50 @@
 "use client"
 
-import { useState } from "react"
-import { Navbar, type NavView } from "@/components/navbar"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { PublicNavbar } from "@/components/public-navbar"
 import { PublicEvents } from "@/components/public-events"
-import { AdminDashboard } from "@/components/admin/admin-dashboard"
-import { ReportView } from "@/components/admin/report-view"
 import { LoginForm } from "@/components/login-form"
 import { RegisterForm } from "@/components/register-form"
 import { useAuth } from "@/lib/auth-context"
+import { toast } from "sonner"
 
 export default function Home() {
-  const [currentView, setCurrentView] = useState<NavView>("public")
+  const searchParams = useSearchParams()
+  const [showLogin, setShowLogin] = useState(false)
   const [authFormMode, setAuthFormMode] = useState<"login" | "register">("login")
   const { isAuthenticated, isLoading } = useAuth()
 
-  const needsLogin =
-    (currentView === "gestion" || currentView === "reporte") && !isAuthenticated && !isLoading
+  useEffect(() => {
+    if (searchParams.get("login") === "1") setShowLogin(true)
+    if (searchParams.get("unauthorized") === "1") {
+      toast.error("No tienes permiso para acceder al panel de administración")
+    }
+  }, [searchParams])
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar currentView={currentView} onViewChange={setCurrentView} />
-      {needsLogin && authFormMode === "login" && (
-        <LoginForm onSwitchToRegister={() => setAuthFormMode("register")} />
-      )}
-      {needsLogin && authFormMode === "register" && (
-        <RegisterForm
-          onSwitchToLogin={() => setAuthFormMode("login")}
-          onSuccess={() => setAuthFormMode("login")}
+      <PublicNavbar onOpenLogin={() => setShowLogin(true)} />
+      {showLogin && authFormMode === "login" && (
+        <LoginForm
+          onSuccess={() => setShowLogin(false)}
+          onSwitchToRegister={() => setAuthFormMode("register")}
+          onClose={() => setShowLogin(false)}
         />
       )}
-      {!needsLogin && currentView === "public" && (
-        <PublicEvents onRequestLogin={() => setCurrentView("gestion")} />
+      {showLogin && authFormMode === "register" && (
+        <RegisterForm
+          onSwitchToLogin={() => setAuthFormMode("login")}
+          onSuccess={() => {
+            setAuthFormMode("login")
+            setShowLogin(false)
+          }}
+          onClose={() => setShowLogin(false)}
+        />
       )}
-      {!needsLogin && currentView === "gestion" && <AdminDashboard />}
-      {!needsLogin && currentView === "reporte" && <ReportView />}
+      {!showLogin && (
+        <PublicEvents onRequestLogin={() => setShowLogin(true)} />
+      )}
     </div>
   )
 }
