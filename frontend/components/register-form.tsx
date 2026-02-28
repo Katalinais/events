@@ -11,9 +11,10 @@ import { toast } from "sonner"
 interface RegisterFormProps {
   onSuccess?: () => void
   onSwitchToLogin?: () => void
+  onClose?: () => void
 }
 
-export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
+export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFormProps) {
   const { setSession } = useAuth()
   const [nombre, setNombre] = useState("")
   const [apellido, setApellido] = useState("")
@@ -136,6 +137,15 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               className="text-center text-sm text-muted-foreground underline hover:text-foreground"
             >
               ¿Ya tienes cuenta? Inicia sesión
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-center text-sm text-muted-foreground underline hover:text-foreground"
+            >
+              Ver eventos sin iniciar sesión
             </button>
           )}
         </form>

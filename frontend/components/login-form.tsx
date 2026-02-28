@@ -10,9 +10,10 @@ import { toast } from "sonner"
 interface LoginFormProps {
   onSuccess?: () => void
   onSwitchToRegister?: () => void
+  onClose?: () => void
 }
 
-export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
+export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormProps) {
   const { login } = useAuth()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -86,6 +87,15 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
               className="text-center text-sm text-muted-foreground underline hover:text-foreground"
             >
               ¿No tienes cuenta? Regístrate
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-center text-sm text-muted-foreground underline hover:text-foreground"
+            >
+              Ver eventos sin iniciar sesión
             </button>
           )}
         </form>
