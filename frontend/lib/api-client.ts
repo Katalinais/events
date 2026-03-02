@@ -176,6 +176,18 @@ export const eventApi = {
     return eventos.map(mapBackendToFrontend);
   },
 
+  async getFavoriteEvents(): Promise<EventItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/favorites`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al obtener tus favoritos');
+    }
+    const eventos: BackendEvento[] = await response.json();
+    return eventos.map(mapBackendToFrontend);
+  },
+
   async markInterested(eventId: string): Promise<{ interesados: number }> {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/interested`, {
       method: 'POST',

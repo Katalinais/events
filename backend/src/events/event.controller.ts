@@ -71,6 +71,16 @@ export class EventController {
     return this.eventService.findAll();
   }
 
+  @Get('favorites')
+  @UseGuards(JwtAuthGuard)
+  findFavorites(@Req() req: Request & { user?: { userId: number } }) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException('Debes iniciar sesión para ver tus favoritos');
+    }
+    return this.eventService.findFavoritesByUser(userId);
+  }
+
   @Get('upcoming')
   findUpcoming(@Query('limit', new ParseIntPipe({ optional: true })) limit?: number) {
     return this.eventService.findUpcoming(limit);

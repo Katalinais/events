@@ -6,14 +6,12 @@ import { PublicNavbar } from "@/components/public-navbar"
 import { PublicEvents } from "@/components/public-events"
 import { LoginForm } from "@/components/login-form"
 import { RegisterForm } from "@/components/register-form"
-import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
 export default function Home() {
   const searchParams = useSearchParams()
   const [showLogin, setShowLogin] = useState(false)
   const [authFormMode, setAuthFormMode] = useState<"login" | "register">("login")
-  const { isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
     if (searchParams.get("login") === "1") setShowLogin(true)

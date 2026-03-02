@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { CalendarDays, LogIn, LogOut, LayoutDashboard } from "lucide-react"
+import { CalendarDays, LogIn, LogOut, LayoutDashboard, Heart } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 
@@ -41,6 +41,17 @@ export function PublicNavbar({ onOpenLogin }: PublicNavbarProps) {
             <CalendarDays className="h-4 w-4" />
             <span className="hidden sm:inline">Eventos</span>
           </span>
+          {isAuthenticated && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link
+                href="/user"
+                className="gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline">Mis favoritos</span>
+              </Link>
+            </Button>
+          )}
           {isAuthenticated && isAdmin && (
             <Button variant="ghost" size="sm" asChild>
               <Link

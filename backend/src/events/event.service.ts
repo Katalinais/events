@@ -109,6 +109,27 @@ export class EventService {
     });
   }
 
+  async findFavoritesByUser(usuarioId: number) {
+    const favoritos = await this.prisma.usuarioInteresado.findMany({
+      where: {
+        usuarioId,
+        evento: {
+          deletedAt: null,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        evento: {
+          include: { _count: { select: { interesados: true } } },
+        },
+      },
+    });
+
+    return favoritos
+      .map((fav) => fav.evento)
+      .filter((evento): evento is NonNullable<typeof evento> => evento != null);
+  }
+
   async markInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {
     await this.findOne(eventoId);
 
