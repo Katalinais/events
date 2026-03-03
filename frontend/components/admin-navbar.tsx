@@ -1,11 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { LayoutDashboard, BarChart3, LogOut } from "lucide-react"
+import { Menu, LayoutDashboard, BarChart3, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 export type AdminNavView = "gestion" | "reporte"
 
@@ -16,11 +23,26 @@ interface AdminNavbarProps {
 
 export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
   const { logout } = useAuth()
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  const handleNav = (view: AdminNavView) => {
+    onViewChange(view)
+    setSheetOpen(false)
+  }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2">
+    <>
+      <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            onClick={() => setSheetOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/logo.png"
@@ -37,46 +59,55 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
               Event Management
             </span>
           </Link>
+          <div className="w-10 shrink-0" aria-hidden />
         </div>
+      </header>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="left" className="w-64 p-0 sm:max-w-xs">
+          <SheetHeader className="border-b border-border p-4 text-left">
+            <SheetTitle className="text-base font-semibold">Menú</SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col gap-1 p-4">
             <button
-              onClick={() => onViewChange("gestion")}
+              onClick={() => handleNav("gestion")}
               className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
                 currentView === "gestion"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <LayoutDashboard className="h-4 w-4" />
-              <span className="hidden sm:inline">Gestión</span>
+              <LayoutDashboard className="h-5 w-5 shrink-0" />
+              Gestión
             </button>
             <button
-              onClick={() => onViewChange("reporte")}
+              onClick={() => handleNav("reporte")}
               className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
                 currentView === "reporte"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Reporte</span>
+              <BarChart3 className="h-5 w-5 shrink-0" />
+              Reporte
             </button>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Salir</span>
-          </Button>
-        </div>
-      </nav>
-    </header>
+            <div className="my-2 border-t border-border" />
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setSheetOpen(false)
+                logout()
+              }}
+            >
+              <LogOut className="h-5 w-5 shrink-0" />
+              Salir
+            </Button>
+          </nav>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
