@@ -81,6 +81,12 @@ export class EventController {
     return this.eventService.findFavoritesByUser(userId);
   }
 
+  @Get('report')
+  @UseGuards(JwtAuthGuard)
+  findReport() {
+    return this.eventService.findReportWithInterestedUsers();
+  }
+
   @Get('upcoming')
   findUpcoming(@Query('limit', new ParseIntPipe({ optional: true })) limit?: number) {
     return this.eventService.findUpcoming(limit);

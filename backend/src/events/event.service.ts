@@ -42,6 +42,24 @@ export class EventService {
     });
   }
 
+
+  async findReportWithInterestedUsers() {
+    return this.prisma.evento.findMany({
+      where: { deletedAt: null },
+      orderBy: { fecha: 'asc' },
+      include: {
+        _count: { select: { interesados: true } },
+        interesados: {
+          include: {
+            usuario: {
+              select: { id: true, nombre: true, username: true, correo: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async findOne(id: number) {
     const evento = await this.prisma.evento.findFirst({
       where: { id, deletedAt: null },
@@ -131,6 +149,9 @@ export class EventService {
   }
 
   async markInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {
+    if (!usuarioId) {
+      throw new BadRequestException('Usuario no identificado');
+    }
     await this.findOne(eventoId);
 
     try {

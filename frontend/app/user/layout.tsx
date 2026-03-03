@@ -10,17 +10,22 @@ export default function UserLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const router = useRouter()
+  const isAdmin = user?.tipo === "ADMINISTRADOR"
 
   useEffect(() => {
     if (isLoading) return
     if (!isAuthenticated) {
       router.replace("/?login=1")
+      return
     }
-  }, [isAuthenticated, isLoading, router])
+    if (isAdmin) {
+      router.replace("/admin")
+    }
+  }, [isAuthenticated, isLoading, isAdmin, router])
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated || isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-muted-foreground">Cargando...</p>
