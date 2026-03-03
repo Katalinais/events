@@ -1,13 +1,11 @@
 "use client"
 
 import { Heart } from "lucide-react"
-import { useFavoriteEvents, useUnmarkInterested } from "@/lib/hooks/use-events"
+import { useFavoriteEvents } from "@/lib/hooks/use-events"
 import { EventCard } from "@/components/event-card"
-import { Button } from "@/components/ui/button"
 
 export default function UserFavoritesPage() {
   const { data: events = [], isLoading } = useFavoriteEvents()
-  const unmarkMutation = useUnmarkInterested()
 
   if (isLoading) {
     return (
@@ -57,18 +55,7 @@ export default function UserFavoritesPage() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {events.map((event) => (
-          <div key={event.id} className="flex flex-col gap-3">
-            <EventCard event={event} />
-            <Button
-              variant="outline"
-              size="sm"
-              className="justify-center"
-              disabled={unmarkMutation.isPending}
-              onClick={() => unmarkMutation.mutate(event.id)}
-            >
-              Quitar de favoritos
-            </Button>
-          </div>
+          <EventCard key={event.id} event={event} initialFavorite />
         ))}
       </div>
     </div>

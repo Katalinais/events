@@ -41,7 +41,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicNavbar onOpenLogin={() => setShowLogin(true)} />
+      <PublicNavbar
+        onOpenLogin={() => setShowLogin(true)}
+        onLogoClick={() => {
+          setAuthFormMode("login")
+          setShowLogin(false)
+          router.push("/")
+        }}
+      />
       {showLogin && authFormMode === "login" && (
         <LoginForm
           onSuccess={() => setShowLogin(false)}

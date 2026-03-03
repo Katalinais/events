@@ -37,10 +37,13 @@ export function useUpcomingEvents(limit?: number) {
   })
 }
 
-export function useFavoriteEvents() {
+export function useFavoriteEvents(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true
+
   return useQuery({
     queryKey: eventKeys.favorites(),
     queryFn: () => eventApi.getFavoriteEvents(),
+    enabled,
   })
 }
 

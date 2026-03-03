@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useEventContext } from "@/lib/event-context"
 import { useAuth } from "@/lib/auth-context"
-import { useMarkInterested } from "@/lib/hooks/use-events"
+import { useMarkInterested, useUnmarkInterested } from "@/lib/hooks/use-events"
 import type { EventItem } from "@/lib/api-client"
 
 function isTruncated(el: HTMLElement | null): boolean {
@@ -18,14 +18,17 @@ function isTruncated(el: HTMLElement | null): boolean {
 interface EventCardProps {
   event: EventItem
   onRequestLogin?: () => void
+  initialFavorite?: boolean
 }
 
-export function EventCard({ event, onRequestLogin }: EventCardProps) {
+export function EventCard({ event, onRequestLogin, initialFavorite = false }: EventCardProps) {
   const { getCategoryName } = useEventContext()
   const { isAuthenticated } = useAuth()
   const markInterested = useMarkInterested()
+  const unmarkInterested = useUnmarkInterested()
   const [expanded, setExpanded] = useState(false)
   const [needsVerMas, setNeedsVerMas] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(initialFavorite)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const descRef = useRef<HTMLParagraphElement>(null)
 
@@ -37,6 +40,10 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
     const truncated = isTruncated(titleRef.current) || isTruncated(descRef.current)
     setNeedsVerMas(truncated)
   }
+
+  useEffect(() => {
+    setIsFavorite(initialFavorite)
+  }, [initialFavorite])
 
   useLayoutEffect(() => {
     checkTruncation()
@@ -68,11 +75,27 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
       onRequestLogin?.()
       return
     }
-    markInterested.mutate(event.id)
+    if (isFavorite) {
+      unmarkInterested.mutate(event.id, {
+        onSuccess: () => {
+          setIsFavorite(false)
+        },
+      })
+    } else {
+      markInterested.mutate(event.id, {
+        onSuccess: () => {
+          setIsFavorite(true)
+        },
+      })
+    }
   }
 
   const interestedButtonLabel = isAuthenticated
-    ? (markInterested.isPending ? "..." : "Marcar como favorito")
+    ? (markInterested.isPending || unmarkInterested.isPending
+        ? "..."
+        : isFavorite
+          ? "Quitar de favoritos"
+          : "Marcar como favorito")
     : "Marcar como favorito"
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
@@ -139,8 +162,11 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
         )}
 
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Heart className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Heart
+            className={`h-4 w-4 ${isFavorite ? "text-red-500" : "text-primary"}`}
+            fill={isFavorite ? "currentColor" : "none"}
+          />
             <span className="font-medium">{event.interested}</span>
             <span className="hidden sm:inline">favoritos</span>
           </div>
@@ -148,10 +174,17 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
           <Button
             size="sm"
             onClick={handleInterested}
-            disabled={markInterested.isPending}
-            className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={markInterested.isPending || unmarkInterested.isPending}
+            className={`gap-1.5 ${
+              isFavorite
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
           >
-            <Heart className="h-3.5 w-3.5" />
+            <Heart
+              className="h-3.5 w-3.5"
+              fill={isFavorite ? "currentColor" : "none"}
+            />
             {interestedButtonLabel}
           </Button>
         </div>
