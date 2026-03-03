@@ -11,6 +11,8 @@ export const eventKeys = {
   details: () => [...eventKeys.all, 'detail'] as const,
   detail: (id: string) => [...eventKeys.details(), id] as const,
   upcoming: () => [...eventKeys.all, 'upcoming'] as const,
+  favorites: () => [...eventKeys.all, 'favorites'] as const,
+  report: () => [...eventKeys.all, 'report'] as const,
 }
 
 export function useEvents() {
@@ -32,6 +34,20 @@ export function useUpcomingEvents(limit?: number) {
   return useQuery({
     queryKey: [...eventKeys.upcoming(), limit],
     queryFn: () => eventApi.getUpcomingEvents(limit),
+  })
+}
+
+export function useFavoriteEvents() {
+  return useQuery({
+    queryKey: eventKeys.favorites(),
+    queryFn: () => eventApi.getFavoriteEvents(),
+  })
+}
+
+export function useReportEvents() {
+  return useQuery({
+    queryKey: eventKeys.report(),
+    queryFn: () => eventApi.getReportEvents(),
   })
 }
 

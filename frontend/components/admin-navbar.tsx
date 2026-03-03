@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { CalendarDays, LayoutDashboard, BarChart3, LogOut } from "lucide-react"
+import { LayoutDashboard, BarChart3, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -41,13 +41,6 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
-            >
-              <CalendarDays className="h-4 w-4" />
-              <span className="hidden sm:inline">Eventos</span>
-            </Link>
             <button
               onClick={() => onViewChange("gestion")}
               className={cn(

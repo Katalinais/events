@@ -26,6 +26,24 @@ export interface BackendEvento {
   _count?: { interesados: number };
 }
 
+export interface ReportInteresado {
+  id: number;
+  nombre: string;
+  username: string;
+  correo: string | null;
+}
+
+export interface BackendReportEvento extends BackendEvento {
+  interesados: { usuario: ReportInteresado }[];
+}
+
+export interface ReportEventItem {
+  id: string;
+  name: string;
+  interested: number;
+  interestedUsers: ReportInteresado[];
+}
+
 export interface EventItem {
   id: string;
   name: string;
@@ -174,6 +192,34 @@ export const eventApi = {
     }
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
+  },
+
+  async getFavoriteEvents(): Promise<EventItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/favorites`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al obtener tus favoritos');
+    }
+    const eventos: BackendEvento[] = await response.json();
+    return eventos.map(mapBackendToFrontend);
+  },
+
+  async getReportEvents(): Promise<ReportEventItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/report`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      throw new Error('Error al obtener el reporte');
+    }
+    const eventos: BackendReportEvento[] = await response.json();
+    return eventos.map((e) => ({
+      id: String(e.id),
+      name: e.nombre,
+      interested: e._count?.interesados ?? 0,
+      interestedUsers: e.interesados?.map((i) => i.usuario) ?? [],
+    }));
   },
 
   async markInterested(eventId: string): Promise<{ interesados: number }> {
