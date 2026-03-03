@@ -164,10 +164,25 @@ export class EventService {
       if (!isUniqueViolation) throw e;
     }
 
-    const evento = await this.prisma.evento.findFirst({
-      where: { id: eventoId },
-      include: { _count: { select: { interesados: true } } },
+    const total = await this.prisma.usuarioInteresado.count({
+      where: { eventoId },
     });
-    return { interesados: evento!._count.interesados };
+    return { interesados: total };
+  }
+
+  async unmarkInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {
+    if (!usuarioId) {
+      throw new BadRequestException('Usuario no identificado');
+    }
+    await this.findOne(eventoId);
+
+    await this.prisma.usuarioInteresado.deleteMany({
+      where: { usuarioId, eventoId },
+    });
+
+    const total = await this.prisma.usuarioInteresado.count({
+      where: { eventoId },
+    });
+    return { interesados: total };
   }
 }

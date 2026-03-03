@@ -108,10 +108,30 @@ export function useMarkInterested() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
       queryClient.invalidateQueries({ queryKey: eventKeys.upcoming() })
+      queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
+      queryClient.invalidateQueries({ queryKey: eventKeys.report() })
       toast.success('Has marcado tu interés en este evento')
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Error al marcar interés')
+    },
+  })
+}
+
+export function useUnmarkInterested() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (eventId: string) => eventApi.unmarkInterested(eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: eventKeys.upcoming() })
+      queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
+      queryClient.invalidateQueries({ queryKey: eventKeys.report() })
+      toast.success('Has quitado este evento de tus favoritos')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al quitar de favoritos')
     },
   })
 }
