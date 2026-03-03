@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
-import { CalendarDays, Heart } from "lucide-react"
+import { CalendarDays, Heart, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useEventContext } from "@/lib/event-context"
@@ -18,6 +19,7 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
   const { getCategoryName } = useEventContext()
   const { isAuthenticated } = useAuth()
   const markInterested = useMarkInterested()
+  const [expanded, setExpanded] = useState(false)
 
   const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("es-ES", {
     day: "numeric",
@@ -66,7 +68,7 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
       <div className="flex flex-col gap-3 p-4">
         <div className="flex flex-col gap-1">
           <h3
-            className="text-lg font-semibold leading-tight text-foreground text-balance"
+            className={`text-lg font-semibold leading-snug text-foreground ${!expanded ? "line-clamp-2" : ""}`}
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {event.name}
@@ -77,9 +79,29 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
           </div>
         </div>
 
-        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+        <p
+          className={`text-sm leading-relaxed text-muted-foreground ${!expanded ? "line-clamp-2" : ""}`}
+        >
           {event.description}
         </p>
+
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="-ml-1 flex w-fit items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="h-3.5 w-3.5" />
+              Ver menos
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3.5 w-3.5" />
+              Ver más
+            </>
+          )}
+        </button>
 
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
