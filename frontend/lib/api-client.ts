@@ -233,6 +233,18 @@ export const eventApi = {
     }
     return response.json();
   },
+
+  async unmarkInterested(eventId: string): Promise<{ interesados: number }> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/interested`, {
+      method: 'DELETE',
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al quitar de favoritos');
+    }
+    return response.json();
+  },
 };
 
 export interface CategoryItem {

@@ -15,9 +15,10 @@ import {
 
 interface PublicNavbarProps {
   onOpenLogin?: () => void
+  onLogoClick?: () => void
 }
 
-export function PublicNavbar({ onOpenLogin }: PublicNavbarProps) {
+export function PublicNavbar({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
   const { isAuthenticated, user, logout } = useAuth()
   const isAdmin = user?.tipo === "ADMINISTRADOR"
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -40,7 +41,13 @@ export function PublicNavbar({ onOpenLogin }: PublicNavbarProps) {
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+            onClick={() => {
+              onLogoClick?.()
+            }}
+          >
             <Image
               src="/logo.png"
               alt="Event Management"

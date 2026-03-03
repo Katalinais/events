@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useEventContext } from "@/lib/event-context"
-import { useEvents } from "@/lib/hooks/use-events"
+import { useAuth } from "@/lib/auth-context"
+import { useEvents, useFavoriteEvents } from "@/lib/hooks/use-events"
 import { EventCard } from "@/components/event-card"
 
 interface PublicEventsProps {
@@ -20,9 +21,13 @@ interface PublicEventsProps {
 
 export function PublicEvents({ onRequestLogin }: PublicEventsProps) {
   const { categories } = useEventContext()
+  const { isAuthenticated } = useAuth()
   const { data: events = [], isLoading } = useEvents()
+  const { data: favoriteEvents = [] } = useFavoriteEvents({ enabled: isAuthenticated })
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+
+  const favoriteIds = new Set(favoriteEvents.map((e) => e.id))
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch = event.name.toLowerCase().includes(search.toLowerCase())
@@ -94,6 +99,7 @@ export function PublicEvents({ onRequestLogin }: PublicEventsProps) {
               key={event.id}
               event={event}
               onRequestLogin={onRequestLogin}
+              initialFavorite={favoriteIds.has(event.id)}
             />
           ))}
         </div>

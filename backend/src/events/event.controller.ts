@@ -106,6 +106,20 @@ export class EventController {
     return this.eventService.markInterested(id, userId);
   }
 
+  @Delete(':id/interested')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  unmarkInterested(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user?: { userId: number } },
+  ) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException('Debes iniciar sesión para quitar de favoritos');
+    }
+    return this.eventService.unmarkInterested(id, userId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.eventService.findOne(id);
