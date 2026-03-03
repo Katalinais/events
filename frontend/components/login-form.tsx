@@ -56,7 +56,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
             <Input
               id="login-username"
               type="text"
-              placeholder="nombre_de_usuario"
+              placeholder="nombre de usuario"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
