@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useLayoutEffect, useEffect } from "react"
 import Image from "next/image"
 import { CalendarDays, Heart, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,11 @@ import { useEventContext } from "@/lib/event-context"
 import { useAuth } from "@/lib/auth-context"
 import { useMarkInterested } from "@/lib/hooks/use-events"
 import type { EventItem } from "@/lib/api-client"
+
+function isTruncated(el: HTMLElement | null): boolean {
+  if (!el) return false
+  return el.scrollHeight > el.clientHeight
+}
 
 interface EventCardProps {
   event: EventItem
@@ -20,6 +25,32 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
   const { isAuthenticated } = useAuth()
   const markInterested = useMarkInterested()
   const [expanded, setExpanded] = useState(false)
+  const [needsVerMas, setNeedsVerMas] = useState(false)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const descRef = useRef<HTMLParagraphElement>(null)
+
+  const checkTruncation = () => {
+    if (expanded) {
+      setNeedsVerMas(false)
+      return
+    }
+    const truncated = isTruncated(titleRef.current) || isTruncated(descRef.current)
+    setNeedsVerMas(truncated)
+  }
+
+  useLayoutEffect(() => {
+    checkTruncation()
+  }, [expanded, event.name, event.description])
+
+  useEffect(() => {
+    const titleEl = titleRef.current
+    const descEl = descRef.current
+    if (!titleEl && !descEl) return
+    const observer = new ResizeObserver(checkTruncation)
+    if (titleEl) observer.observe(titleEl)
+    if (descEl) observer.observe(descEl)
+    return () => observer.disconnect()
+  }, [expanded, event.name, event.description])
 
   const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("es-ES", {
     day: "numeric",
@@ -68,6 +99,7 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
       <div className="flex flex-col gap-3 p-4">
         <div className="flex flex-col gap-1">
           <h3
+            ref={titleRef}
             className={`text-lg font-semibold leading-snug text-foreground ${!expanded ? "line-clamp-2" : ""}`}
             style={{ fontFamily: "var(--font-heading)" }}
           >
@@ -80,28 +112,31 @@ export function EventCard({ event, onRequestLogin }: EventCardProps) {
         </div>
 
         <p
+          ref={descRef}
           className={`text-sm leading-relaxed text-muted-foreground ${!expanded ? "line-clamp-2" : ""}`}
         >
           {event.description}
         </p>
 
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className="-ml-1 flex w-fit items-center gap-1 text-xs font-medium text-primary hover:underline"
-        >
-          {expanded ? (
-            <>
-              <ChevronUp className="h-3.5 w-3.5" />
-              Ver menos
-            </>
-          ) : (
-            <>
-              <ChevronDown className="h-3.5 w-3.5" />
-              Ver más
-            </>
-          )}
-        </button>
+        {(needsVerMas || expanded) && (
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="-ml-1 flex w-fit items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="h-3.5 w-3.5" />
+                Ver menos
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3.5 w-3.5" />
+                Ver más
+              </>
+            )}
+          </button>
+        )}
 
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
