@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronRight, Users } from "lucide-react"
+import { Eye, Users } from "lucide-react"
 import { useEvents, useReportEvents } from "@/lib/hooks/use-events"
 import type { ReportInteresado } from "@/lib/api-client"
 
@@ -48,7 +48,7 @@ export function ReportView() {
           Reporte
         </h1>
         <p className="text-sm text-muted-foreground leading-relaxed sm:text-base">
-          Número de interesados por evento. Usa &quot;Ver detalles&quot; para ver quiénes marcaron interés.
+          Número de interesados por evento. Haz clic en el ícono para ver quiénes marcaron interés.
         </p>
       </div>
 
@@ -73,16 +73,12 @@ export function ReportView() {
                 </span>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="shrink-0 gap-1 text-muted-foreground hover:text-foreground"
+                  size="icon"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={() => toggleDetails(event.id)}
+                  aria-label="Ver detalles"
                 >
-                  {expandedId === event.id ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                  Ver detalles
+                  <Eye className="h-4 w-4" />
                 </Button>
               </div>
               {expandedId === event.id && (
@@ -151,16 +147,12 @@ export function ReportView() {
                     <TableCell>
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="gap-1.5 text-muted-foreground hover:text-foreground"
+                        size="icon"
+                        className="text-muted-foreground hover:text-foreground"
                         onClick={() => toggleDetails(event.id)}
+                        aria-label="Ver detalles"
                       >
-                        {expandedId === event.id ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                        Ver detalles
+                        <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
