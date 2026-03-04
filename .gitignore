@@ -1,0 +1,10 @@
+node_modules
+.next
+.env
+/generated/prisma
+/backend/node_modules
+/backend/dist
+/backend/uploads
+/.vscode
+/.DS_Store
+
