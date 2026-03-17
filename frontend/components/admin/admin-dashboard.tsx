@@ -1,11 +1,13 @@
 "use client"
 
-import { CalendarDays, Tag } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CategoryManager } from "@/components/admin/category-manager"
 import { EventManager } from "@/components/admin/event-manager"
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  section: "events" | "categories"
+}
+
+export function AdminDashboard({ section }: AdminDashboardProps) {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-2 pb-8">
@@ -20,27 +22,8 @@ export function AdminDashboard() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="events" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="events" className="gap-2">
-            <CalendarDays className="h-4 w-4" />
-            Eventos
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="gap-2">
-            <Tag className="h-4 w-4" />
-            Categorias
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="events">
-          <EventManager />
-        </TabsContent>
-
-        <TabsContent value="categories">
-          <CategoryManager />
-        </TabsContent>
-      </Tabs>
+      {section === "events" && <EventManager />}
+      {section === "categories" && <CategoryManager />}
     </main>
   )
 }
