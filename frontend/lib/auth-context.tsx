@@ -1,7 +1,9 @@
 "use client"
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { authApi, type AuthUser } from "@/lib/api-client"
+import { eventKeys } from "@/lib/hooks/use-events"
 
 const TOKEN_KEY = "auth_token"
 const USER_KEY = "auth_user"
@@ -27,6 +29,7 @@ function loadStored() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient()
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -44,7 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(res.usuario))
     setToken(res.access_token)
     setUser(res.usuario)
-  }, [])
+    queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
+  }, [queryClient])
 
   const setSession = useCallback((accessToken: string, userData: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, accessToken)
@@ -58,7 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
-  }, [])
+    queryClient.removeQueries({ queryKey: eventKeys.favorites() })
+  }, [queryClient])
 
   return (
     <AuthContext.Provider

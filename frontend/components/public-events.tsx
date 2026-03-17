@@ -99,7 +99,7 @@ export function PublicEvents({ onRequestLogin }: PublicEventsProps) {
               key={event.id}
               event={event}
               onRequestLogin={onRequestLogin}
-              initialFavorite={favoriteIds.has(event.id)}
+              initialFavorite={isAuthenticated && favoriteIds.has(event.id)}
             />
           ))}
         </div>

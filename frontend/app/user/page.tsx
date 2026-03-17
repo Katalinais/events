@@ -1,4 +1,4 @@
-"use client"
+q"use client"
 
 import { Heart } from "lucide-react"
 import { useFavoriteEvents } from "@/lib/hooks/use-events"
