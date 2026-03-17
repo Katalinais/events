@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Menu, LayoutDashboard, BarChart3, LogOut } from "lucide-react"
+import { Menu, LayoutDashboard, BarChart3, CalendarDays, Tag, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 
-export type AdminNavView = "gestion" | "reporte"
+export type AdminNavView = "gestion-eventos" | "gestion-categorias" | "reporte"
 
 interface AdminNavbarProps {
   currentView: AdminNavView
@@ -70,10 +70,10 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
           </SheetHeader>
           <nav className="flex flex-col gap-1 p-4">
             <button
-              onClick={() => handleNav("gestion")}
+              onClick={() => handleNav("gestion-eventos")}
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                currentView === "gestion"
+                currentView === "gestion-eventos" || currentView === "gestion-categorias"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
@@ -81,6 +81,32 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
               <LayoutDashboard className="h-5 w-5 shrink-0" />
               Gestión
             </button>
+            <div className="ml-8 flex flex-col gap-1">
+              <button
+                onClick={() => handleNav("gestion-eventos")}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                  currentView === "gestion-eventos"
+                    ? "bg-primary/90 text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <CalendarDays className="h-4 w-4 shrink-0" />
+                Eventos
+              </button>
+              <button
+                onClick={() => handleNav("gestion-categorias")}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                  currentView === "gestion-categorias"
+                    ? "bg-primary/90 text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <Tag className="h-4 w-4 shrink-0" />
+                Categorías
+              </button>
+            </div>
             <button
               onClick={() => handleNav("reporte")}
               className={cn(
