@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { PublicNavbar } from "@/components/public-navbar"
 import { PublicEvents } from "@/components/public-events"
@@ -9,7 +9,7 @@ import { RegisterForm } from "@/components/register-form"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { isAuthenticated, isLoading, user } = useAuth()
@@ -70,5 +70,17 @@ export default function Home() {
         <PublicEvents onRequestLogin={() => setShowLogin(true)} />
       )}
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Cargando...</p>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }
