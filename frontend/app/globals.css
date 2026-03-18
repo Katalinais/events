@@ -116,6 +116,20 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Evitar zoom y reescalado automático en móvil */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+  max-width: 100vw;
+  touch-action: manipulation;
+}
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  touch-action: manipulation;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
