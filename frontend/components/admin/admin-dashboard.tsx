@@ -27,3 +27,4 @@ export function AdminDashboard({ section }: AdminDashboardProps) {
     </main>
   )
 }
+

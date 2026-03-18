@@ -9,11 +9,13 @@ export default function AdminPage() {
   const [currentView, setCurrentView] = useState<AdminNavView>("gestion-eventos")
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col sm:flex-row">
       <AdminNavbar currentView={currentView} onViewChange={setCurrentView} />
-      {currentView === "gestion-eventos" && <AdminDashboard section="events" />}
-      {currentView === "gestion-categorias" && <AdminDashboard section="categories" />}
-      {currentView === "reporte" && <ReportView />}
+      <main className="flex-1">
+        {currentView === "gestion-eventos" && <AdminDashboard section="events" />}
+        {currentView === "gestion-categorias" && <AdminDashboard section="categories" />}
+        {currentView === "reporte" && <ReportView />}
+      </main>
     </div>
   )
 }
