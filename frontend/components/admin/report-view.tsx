@@ -30,7 +30,7 @@ export function ReportView() {
           className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Reporte
+          Reporte - Eventos
         </h1>
         <p className="text-sm text-muted-foreground leading-relaxed sm:text-base">
           Número de interesados por evento.
