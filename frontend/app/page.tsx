@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { PublicNavbar } from "@/components/public-navbar"
 import { PublicEvents } from "@/components/public-events"
@@ -40,35 +42,69 @@ function HomeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <PublicNavbar
-        onOpenLogin={() => setShowLogin(true)}
-        onLogoClick={() => {
-          setAuthFormMode("login")
-          setShowLogin(false)
-          router.push("/")
-        }}
-      />
-      {showLogin && authFormMode === "login" && (
-        <LoginForm
-          onSuccess={() => setShowLogin(false)}
-          onSwitchToRegister={() => setAuthFormMode("register")}
-          onClose={() => setShowLogin(false)}
-        />
-      )}
-      {showLogin && authFormMode === "register" && (
-        <RegisterForm
-          onSwitchToLogin={() => setAuthFormMode("login")}
-          onSuccess={() => {
+    <div className="min-h-screen bg-background flex flex-col sm:flex-row">
+      {!showLogin && (
+        <PublicNavbar
+          onOpenLogin={() => setShowLogin(true)}
+          onLogoClick={() => {
             setAuthFormMode("login")
             setShowLogin(false)
+            router.push("/")
           }}
-          onClose={() => setShowLogin(false)}
         />
       )}
-      {!showLogin && (
-        <PublicEvents onRequestLogin={() => setShowLogin(true)} />
-      )}
+
+      <main className="flex-1">
+        {showLogin && (
+          <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
+            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+              <Link
+                href="/"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  setAuthFormMode("login")
+                  setShowLogin(false)
+                  router.push("/")
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="Event Management"
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 rounded-lg"
+                  priority
+                />
+                <span
+                  className="text-xl font-bold tracking-tight text-foreground"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Event Management
+                </span>
+              </Link>
+              <div className="w-10 shrink-0" aria-hidden />
+            </div>
+          </header>
+        )}
+        {showLogin && authFormMode === "login" && (
+          <LoginForm
+            onSuccess={() => setShowLogin(false)}
+            onSwitchToRegister={() => setAuthFormMode("register")}
+            onClose={() => setShowLogin(false)}
+          />
+        )}
+        {showLogin && authFormMode === "register" && (
+          <RegisterForm
+            onSwitchToLogin={() => setAuthFormMode("login")}
+            onSuccess={() => {
+              setAuthFormMode("login")
+              setShowLogin(false)
+            }}
+            onClose={() => setShowLogin(false)}
+          />
+        )}
+        {!showLogin && <PublicEvents onRequestLogin={() => setShowLogin(true)} />}
+      </main>
     </div>
   )
 }
