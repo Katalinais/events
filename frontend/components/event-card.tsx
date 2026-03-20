@@ -161,21 +161,12 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
           </button>
         )}
 
-        <div className="mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-border/60 pt-3">
-          <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-            <Heart
-              className={`h-4 w-4 shrink-0 ${isFavorite ? "text-red-500" : "text-primary"}`}
-              fill={isFavorite ? "currentColor" : "none"}
-            />
-            <span className="font-medium">{event.interested}</span>
-            <span className="hidden sm:inline">favoritos</span>
-          </div>
-
+        <div className="mt-auto flex shrink-0 justify-end border-t border-border/60 pt-3">
           <Button
             size="sm"
             onClick={handleInterested}
             disabled={markInterested.isPending || unmarkInterested.isPending}
-            className={`shrink-0 gap-1.5 ${
+            className={`gap-1.5 ${
               isFavorite
                 ? "bg-red-500 text-white hover:bg-red-600"
                 : "bg-primary text-primary-foreground hover:bg-primary/90"
