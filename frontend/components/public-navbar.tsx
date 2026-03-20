@@ -1,17 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Menu, CalendarDays, Heart, LogIn, LogOut, LayoutDashboard } from "lucide-react"
+import { CalendarDays, Heart, LayoutDashboard, LogIn, LogOut } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+import { usePathname } from "next/navigation"
+import { useSearchParams } from "next/navigation"
+import { AppNavbar, type AppNavbarItem } from "@/components/app-navbar"
 
 interface PublicNavbarProps {
   onOpenLogin?: () => void
@@ -21,105 +15,84 @@ interface PublicNavbarProps {
 export function PublicNavbar({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
   const { isAuthenticated, user, logout } = useAuth()
   const isAdmin = user?.tipo === "ADMINISTRADOR"
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tab = searchParams.get("tab")
 
-  const closeAnd = (fn: () => void) => {
-    setSheetOpen(false)
-    fn()
+  const isEventsActive = pathname === "/" || (pathname === "/user" && tab === "events")
+  const isFavoritesActive =
+    (pathname === "/user" && tab !== "events") || (pathname !== "/user" && false)
+  const items: AppNavbarItem[] = [
+    {
+      id: "events",
+      label: "Eventos",
+      icon: CalendarDays,
+      active: isEventsActive,
+      href: pathname === "/user" && isAuthenticated && !isAdmin ? "/user?tab=events" : "/",
+    },
+  ]
+
+  if (isAuthenticated && !isAdmin) {
+    items.push({
+      id: "favorites",
+      label: "Mis favoritos",
+      icon: Heart,
+      active: isFavoritesActive,
+      href: pathname === "/user" ? "/user?tab=favorites" : "/user",
+    })
   }
 
-  return (
-    <>
-      <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0"
-            onClick={() => setSheetOpen(true)}
-            aria-label="Abrir menú"
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-          <Link
-            href="/"
-            className="flex items-center gap-2"
-            onClick={() => {
-              onLogoClick?.()
-            }}
-          >
-            <Image
-              src="/logo.png"
-              alt="Event Management"
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-lg"
-              priority
-            />
-            <span
-              className="text-xl font-bold tracking-tight text-foreground"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Event Management
-            </span>
-          </Link>
-          <div className="w-10 shrink-0" aria-hidden />
-        </div>
-      </header>
+  if (isAuthenticated && isAdmin) {
+    items.push({
+      id: "admin",
+      label: "Admin",
+      icon: LayoutDashboard,
+      active: pathname === "/admin",
+      href: "/admin",
+    })
+  }
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="left" className="w-64 p-0 sm:max-w-xs">
-          <SheetHeader className="border-b border-border p-4 text-left">
-            <SheetTitle className="text-base font-semibold">Menú</SheetTitle>
-          </SheetHeader>
-          <nav className="flex flex-col gap-1 p-4">
-            <Button variant="ghost" className="w-full justify-start gap-3 font-medium" asChild>
-              <Link href="/" onClick={() => setSheetOpen(false)}>
-                <CalendarDays className="h-5 w-5 shrink-0" />
-                Eventos
-              </Link>
+  const footer = isAuthenticated ? (
+    <Button
+      variant="ghost"
+      className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+      onClick={logout}
+    >
+      <LogOut className="h-4 w-4 shrink-0" />
+      Salir
+    </Button>
+  ) : (
+    onOpenLogin && (
+      <Button
+        variant="ghost"
+        className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+        onClick={onOpenLogin}
+      >
+        <LogIn className="h-4 w-4 shrink-0" />
+        Entrar
+      </Button>
+    )
+  )
+
+  return (
+    <AppNavbar
+      items={items}
+      onLogoClick={onLogoClick}
+      mobileTitle="Menú"
+      footer={footer || undefined}
+      collapsedFooter={
+        isAuthenticated ? (
+          <Button variant="ghost" size="icon" onClick={logout} aria-label="Salir">
+            <LogOut className="h-5 w-5" />
+          </Button>
+        ) : (
+          onOpenLogin && (
+            <Button variant="ghost" size="icon" onClick={onOpenLogin} aria-label="Entrar">
+              <LogIn className="h-5 w-5" />
             </Button>
-            {isAuthenticated && !isAdmin && (
-              <Button variant="ghost" className="w-full justify-start gap-3 font-medium" asChild>
-                <Link href="/user" onClick={() => setSheetOpen(false)}>
-                  <Heart className="h-5 w-5 shrink-0" />
-                  Mis favoritos
-                </Link>
-              </Button>
-            )}
-            {isAuthenticated && isAdmin && (
-              <Button variant="ghost" className="w-full justify-start gap-3 font-medium" asChild>
-                <Link href="/admin" onClick={() => setSheetOpen(false)}>
-                  <LayoutDashboard className="h-5 w-5 shrink-0" />
-                  Admin
-                </Link>
-              </Button>
-            )}
-            <div className="my-2 border-t border-border" />
-            {isAuthenticated ? (
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-                onClick={() => closeAnd(logout)}
-              >
-                <LogOut className="h-5 w-5 shrink-0" />
-                Salir
-              </Button>
-            ) : (
-              onOpenLogin && (
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => closeAnd(onOpenLogin)}
-                >
-                  <LogIn className="h-5 w-5 shrink-0" />
-                  Entrar
-                </Button>
-              )
-            )}
-          </nav>
-        </SheetContent>
-      </Sheet>
-    </>
+          )
+        )
+      }
+    />
   )
 }

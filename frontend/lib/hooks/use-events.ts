@@ -15,10 +15,12 @@ export const eventKeys = {
   report: () => [...eventKeys.all, 'report'] as const,
 }
 
-export function useEvents() {
+export function useEvents(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true
   return useQuery({
     queryKey: eventKeys.lists(),
     queryFn: () => eventApi.getEvents(),
+    enabled,
   })
 }
 
