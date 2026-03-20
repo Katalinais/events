@@ -1,11 +1,15 @@
 "use client"
 
-import { BarChart3, CalendarDays, LayoutDashboard, LogOut, Tag } from "lucide-react"
+import { BarChart3, CalendarDays, LayoutDashboard, LogOut, Tag, Users } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { AppNavbar, type AppNavbarItem } from "@/components/app-navbar"
 
-export type AdminNavView = "gestion-eventos" | "gestion-categorias" | "reporte"
+export type AdminNavView =
+  | "gestion-eventos"
+  | "gestion-categorias"
+  | "reporte-eventos"
+  | "reporte-usuarios"
 
 interface AdminNavbarProps {
   currentView: AdminNavView
@@ -42,8 +46,24 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
       id: "reporte",
       label: "Reporte",
       icon: BarChart3,
-      active: currentView === "reporte",
-      onClick: () => onViewChange("reporte"),
+      active: currentView === "reporte-eventos" || currentView === "reporte-usuarios",
+      onClick: () => onViewChange("reporte-eventos"),
+      children: [
+        {
+          id: "reporte-eventos",
+          label: "Eventos",
+          icon: CalendarDays,
+          active: currentView === "reporte-eventos",
+          onClick: () => onViewChange("reporte-eventos"),
+        },
+        {
+          id: "reporte-usuarios",
+          label: "Usuarios",
+          icon: Users,
+          active: currentView === "reporte-usuarios",
+          onClick: () => onViewChange("reporte-usuarios"),
+        },
+      ],
     },
   ]
 
