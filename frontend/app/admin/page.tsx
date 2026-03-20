@@ -4,6 +4,7 @@ import { useState } from "react"
 import { AdminNavbar, type AdminNavView } from "@/components/admin-navbar"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 import { ReportView } from "@/components/admin/report-view"
+import { ReportUsersView } from "@/components/admin/report-users-view"
 
 export default function AdminPage() {
   const [currentView, setCurrentView] = useState<AdminNavView>("gestion-eventos")
@@ -14,7 +15,8 @@ export default function AdminPage() {
       <main className="flex-1">
         {currentView === "gestion-eventos" && <AdminDashboard section="events" />}
         {currentView === "gestion-categorias" && <AdminDashboard section="categories" />}
-        {currentView === "reporte" && <ReportView />}
+        {currentView === "reporte-eventos" && <ReportView />}
+        {currentView === "reporte-usuarios" && <ReportUsersView />}
       </main>
     </div>
   )

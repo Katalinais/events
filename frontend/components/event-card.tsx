@@ -98,8 +98,8 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
           : "Marcar como favorito")
     : "Marcar como favorito"
   return (
-    <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
-      <div className="relative aspect-[16/10] overflow-hidden">
+    <article className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+      <div className="relative aspect-[16/10] shrink-0 overflow-hidden">
         <Image
           src={event.imageUrl}
           alt={event.name}
@@ -119,8 +119,8 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 p-4">
-        <div className="flex flex-col gap-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+        <div className="flex min-h-0 flex-col gap-1">
           <h3
             ref={titleRef}
             className={`text-lg font-semibold leading-snug text-foreground ${!expanded ? "line-clamp-2" : ""}`}
@@ -161,12 +161,12 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
           </button>
         )}
 
-        <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Heart
-            className={`h-4 w-4 ${isFavorite ? "text-red-500" : "text-primary"}`}
-            fill={isFavorite ? "currentColor" : "none"}
-          />
+        <div className="mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-border/60 pt-3">
+          <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+            <Heart
+              className={`h-4 w-4 shrink-0 ${isFavorite ? "text-red-500" : "text-primary"}`}
+              fill={isFavorite ? "currentColor" : "none"}
+            />
             <span className="font-medium">{event.interested}</span>
             <span className="hidden sm:inline">favoritos</span>
           </div>
@@ -175,7 +175,7 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
             size="sm"
             onClick={handleInterested}
             disabled={markInterested.isPending || unmarkInterested.isPending}
-            className={`gap-1.5 ${
+            className={`shrink-0 gap-1.5 ${
               isFavorite
                 ? "bg-red-500 text-white hover:bg-red-600"
                 : "bg-primary text-primary-foreground hover:bg-primary/90"
