@@ -90,13 +90,12 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
     }
   }
 
-  const interestedButtonLabel = isAuthenticated
-    ? (markInterested.isPending || unmarkInterested.isPending
-        ? "..."
-        : isFavorite
-          ? "Quitar de favoritos"
-          : "Marcar como favorito")
-    : "Marcar como favorito"
+  const favoriteAriaLabel = (() => {
+    if (markInterested.isPending || unmarkInterested.isPending) return "Guardando..."
+    if (!isAuthenticated) return "Marcar como favorito"
+    return isFavorite ? "Quitar de favoritos" : "Marcar como favorito"
+  })()
+
   return (
     <article className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
       <div className="relative aspect-[16/10] shrink-0 overflow-hidden">
@@ -163,20 +162,19 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
 
         <div className="mt-auto flex shrink-0 justify-end border-t border-border/60 pt-3">
           <Button
-            size="sm"
+            type="button"
+            size="icon"
+            variant="secondary"
             onClick={handleInterested}
             disabled={markInterested.isPending || unmarkInterested.isPending}
-            className={`gap-1.5 ${
+            aria-label={favoriteAriaLabel}
+            className={`h-9 w-9 rounded-full ${
               isFavorite
-                ? "bg-red-500 text-white hover:bg-red-600"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                ? "border-0 bg-red-500 text-white hover:bg-red-600"
+                : "border border-border bg-muted/80 text-primary hover:bg-muted"
             }`}
           >
-            <Heart
-              className="h-3.5 w-3.5"
-              fill={isFavorite ? "currentColor" : "none"}
-            />
-            {interestedButtonLabel}
+            <Heart className="h-5 w-5" fill={isFavorite ? "currentColor" : "none"} />
           </Button>
         </div>
       </div>
