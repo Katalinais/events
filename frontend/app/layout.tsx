@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, DM_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { EventProvider } from '@/lib/event-context'
-import { AuthProvider } from '@/lib/auth-context'
-import { QueryProvider } from '@/lib/query-client'
-import { Toaster } from '@/components/ui/sonner'
+import { EventProvider } from '@/shared/providers/event-context'
+import { AuthProvider } from '@/shared/providers/auth-context'
+import { QueryProvider } from '@/shared/providers/query-client'
+import { Toaster } from '@/shared/components/ui/sonner'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })

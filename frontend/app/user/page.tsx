@@ -3,8 +3,8 @@
 import { CalendarDays, Heart } from "lucide-react"
 import { useMemo } from "react"
 import { useSearchParams } from "next/navigation"
-import { useEvents, useFavoriteEvents } from "@/lib/hooks/use-events"
-import { EventCard } from "@/components/event-card"
+import { useEvents, useFavoriteEvents } from "@/shared/hooks/use-events"
+import { EventCard } from "@/features/events/components/event-card"
 
 export default function UserFavoritesPage() {
   const searchParams = useSearchParams()

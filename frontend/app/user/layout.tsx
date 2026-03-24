@@ -2,8 +2,8 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { PublicNavbar } from "@/components/public-navbar"
+import { useAuth } from "@/shared/providers/auth-context"
+import { PublicNavbar } from "@/features/navigation/components/public-navbar"
 
 export default function UserLayout({
   children,

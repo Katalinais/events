@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { AdminNavbar, type AdminNavView } from "@/components/admin-navbar"
-import { AdminDashboard } from "@/components/admin/admin-dashboard"
-import { ReportView } from "@/components/admin/report-view"
-import { ReportUsersView } from "@/components/admin/report-users-view"
+import type { AdminNavView } from "@/features/admin/types"
+import { AdminNavbar } from "@/features/admin/components/admin-navbar"
+import { AdminDashboard } from "@/features/admin/components/admin-dashboard"
+import { ReportView } from "@/features/admin/components/report-view"
+import { ReportUsersView } from "@/features/admin/components/report-users-view"
 
 export default function AdminPage() {
   const [currentView, setCurrentView] = useState<AdminNavView>("gestion-eventos")
