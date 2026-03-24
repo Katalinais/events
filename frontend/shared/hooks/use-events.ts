@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { eventApi, type EventItem } from "@/shared/lib/api-client"
+import { eventApi, userApi, type EventItem } from "@/shared/lib/api-client"
 import { toast } from "sonner"
 
 export const eventKeys = {
@@ -13,6 +13,10 @@ export const eventKeys = {
   upcoming: () => [...eventKeys.all, 'upcoming'] as const,
   favorites: () => [...eventKeys.all, 'favorites'] as const,
   report: () => [...eventKeys.all, 'report'] as const,
+}
+
+export const adminKeys = {
+  users: () => ['admin', 'users'] as const,
 }
 
 export function useEvents(options?: { enabled?: boolean }) {
@@ -53,6 +57,15 @@ export function useReportEvents() {
   return useQuery({
     queryKey: eventKeys.report(),
     queryFn: () => eventApi.getReportEvents(),
+  })
+}
+
+export function useAdminUsers(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true
+  return useQuery({
+    queryKey: adminKeys.users(),
+    queryFn: () => userApi.getAdminUsers(),
+    enabled,
   })
 }
 
