@@ -355,3 +355,35 @@ export const authApi = {
     return response.json();
   },
 };
+
+export interface AdminUserItem {
+  id: string;
+  nombre: string;
+  apellido: string | null;
+  correo: string | null;
+  username: string;
+  createdAt: string;
+}
+
+export const userApi = {
+  async getAdminUsers(): Promise<AdminUserItem[]> {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(
+        typeof err.message === 'string' ? err.message : 'Error al obtener usuarios'
+      );
+    }
+    const rows: Array<{
+      id: number;
+      nombre: string;
+      apellido: string | null;
+      correo: string | null;
+      username: string;
+      createdAt: string;
+    }> = await response.json();
+    return rows.map((r) => ({ ...r, id: String(r.id) }));
+  },
+};
