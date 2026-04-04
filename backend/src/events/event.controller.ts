@@ -23,6 +23,7 @@ import { extname } from 'path';
 import { EventService } from './event.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
+import { SaveEntradasDto } from './dto/save-entradas.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -118,6 +119,20 @@ export class EventController {
       throw new BadRequestException('Debes iniciar sesión para quitar de favoritos');
     }
     return this.eventService.unmarkInterested(id, userId);
+  }
+
+  @Get(':id/entradas')
+  findEntradas(@Param('id', ParseIntPipe) id: number) {
+    return this.eventService.findEntradas(id);
+  }
+
+  @Post(':id/entradas')
+  @HttpCode(HttpStatus.OK)
+  saveEntradas(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SaveEntradasDto,
+  ) {
+    return this.eventService.saveEntradas(id, dto.entradas);
   }
 
   @Get(':id')

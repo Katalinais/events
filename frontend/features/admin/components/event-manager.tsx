@@ -100,13 +100,24 @@ export function EventManager() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [entradas, setEntradas] = useState<EntradaFormRow[]>([])
+  const [entradasError, setEntradasError] = useState<string | null>(null)
   const imagePreviewUrlRef = useRef<string | null>(null)
 
   const { data: existingEntradas = [] } = useEventoEntradas(editingEvent?.id ?? null)
 
-  const sortedEvents = [...events].sort((a, b) => b.interested - a.interested)
+  useEffect(() => {
+    if (existingEntradas.length > 0) {
+      setEntradas(
+        existingEntradas.map((e) => ({
+          categoriaEntradaId: e.categoriaEntradaId,
+          cantidadTotal: String(e.cantidadTotal),
+          precio: String(e.precio),
+        })),
+      )
+    }
+  }, [existingEntradas])
 
-  const [entradasError, setEntradasError] = useState<string | null>(null)
+  const sortedEvents = [...events].sort((a, b) => b.interested - a.interested)
 
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
@@ -243,18 +254,6 @@ export function EventManager() {
       imagePreviewUrlRef.current = null
     }
   }
-
-  useEffect(() => {
-    if (existingEntradas.length > 0) {
-      setEntradas(
-        existingEntradas.map((e) => ({
-          categoriaEntradaId: e.categoriaEntradaId,
-          cantidadTotal: String(e.cantidadTotal),
-          precio: String(e.precio),
-        })),
-      )
-    }
-  }, [existingEntradas])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
