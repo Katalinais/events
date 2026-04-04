@@ -13,44 +13,53 @@ enum TipoUsuario {
   ADMINISTRADOR
 }
 
+enum EstadoEvento {
+  ACTIVO
+  COMPLETADO
+  CANCELADO
+}
+
 model Evento {
-  id          Int        @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   nombre      String
   descripcion String?
   precio      Float
   urlImagen   String?
   fecha       DateTime
+  estado      EstadoEvento @default(ACTIVO)
   categoriaId Int?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
-  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
+  categoria   Categoria?   @relation(fields: [categoriaId], references: [id])
 
-  interesados UsuarioInteresado[]
+  interesados    UsuarioInteresado[]
+  eventoEntradas EventoEntrada[]
 }
 
 model Categoria {
-  id        Int      @id @default(autoincrement())
-  nombre    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  eventos   Evento[]
+  eventos Evento[]
 }
 
 model Usuario {
-  id        Int        @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   nombre    String
   apellido  String?
-  correo    String?     @unique
-  username  String
+  correo    String?       @unique
+  username  String        @unique
   password  String
   tipo      TipoUsuario
-  createdAt DateTime   @default(now())
+  createdAt DateTime      @default(now())
 
   intereses UsuarioInteresado[]
+  ventas    Venta[]
 }
 
 model UsuarioInteresado {
@@ -59,8 +68,62 @@ model UsuarioInteresado {
   eventoId  Int
   createdAt DateTime @default(now())
 
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  evento    Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  evento  Evento  @relation(fields: [eventoId], references: [id], onDelete: Cascade)
 
-  @@unique([usuarioId, eventoId]) 
+  @@unique([usuarioId, eventoId])
+}
+
+model CategoriaEntrada {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  eventoEntradas EventoEntrada[]
+}
+
+model EventoEntrada {
+  id                  Int      @id @default(autoincrement())
+  eventoId            Int
+  categoriaEntradaId  Int
+  cantidadTotal       Int
+  cantidadDisponible  Int
+  precio              Float
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  evento           Evento           @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  categoriaEntrada CategoriaEntrada @relation(fields: [categoriaEntradaId], references: [id])
+
+  detallesBoleta DetalleBoleta[]
+
+  @@unique([eventoId, categoriaEntradaId])
+}
+
+model Venta {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int
+  codigoQR   String   @unique @default(uuid())
+  total      Float
+  fechaVenta DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  usuario  Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  detalles DetalleBoleta[]
+}
+
+model DetalleBoleta {
+  id               Int      @id @default(autoincrement())
+  ventaId          Int
+  eventoEntradaId  Int
+  cantidad         Int
+  precioUnitario   Float
+  subtotal         Float
+  createdAt        DateTime @default(now())
+
+  venta         Venta         @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  eventoEntrada EventoEntrada @relation(fields: [eventoEntradaId], references: [id])
 }
