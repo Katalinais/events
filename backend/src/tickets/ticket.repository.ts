@@ -1,0 +1,65 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import type { EventoEntrada, Venta } from '@prisma/client';
+
+@Injectable()
+export class TicketRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  findEventoEntradaById(id: number): Promise<EventoEntrada | null> {
+    return this.prisma.eventoEntrada.findFirst({ where: { id } });
+  }
+
+  decrementDisponible(eventoEntradaId: number, cantidad: number): Promise<EventoEntrada> {
+    return this.prisma.eventoEntrada.update({
+      where: { id: eventoEntradaId },
+      data: { cantidadDisponible: { decrement: cantidad } },
+    });
+  }
+
+  createTicketWithDetails(
+    usuarioId: number,
+    total: number,
+    items: { eventoEntradaId: number; cantidad: number; precioUnitario: number; subtotal: number }[],
+  ): Promise<Venta> {
+    return this.prisma.venta.create({
+      data: {
+        usuarioId,
+        total,
+        detalles: {
+          create: items.map((item) => ({
+            eventoEntradaId: item.eventoEntradaId,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            subtotal: item.subtotal,
+          })),
+        },
+      },
+      include: {
+        detalles: {
+          include: {
+            eventoEntrada: {
+              include: { categoriaEntrada: true, evento: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  findTicketsByUser(usuarioId: number) {
+    return this.prisma.venta.findMany({
+      where: { usuarioId },
+      orderBy: { fechaVenta: 'desc' },
+      include: {
+        detalles: {
+          include: {
+            eventoEntrada: {
+              include: { categoriaEntrada: true, evento: true },
+            },
+          },
+        },
+      },
+    });
+  }
+}

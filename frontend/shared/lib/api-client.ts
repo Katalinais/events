@@ -415,6 +415,63 @@ export const ticketCategoryApi = {
   },
 };
 
+export interface BackendTicketDetail {
+  id: number;
+  ventaId: number;
+  eventoEntradaId: number;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  eventoEntrada: {
+    id: number;
+    categoriaEntradaId: number;
+    precio: number;
+    categoriaEntrada: { id: number; nombre: string };
+    evento: { id: number; nombre: string };
+  };
+}
+
+export interface BackendTicketPurchase {
+  id: number;
+  usuarioId: number;
+  codigoQR: string;
+  total: number;
+  fechaVenta: string;
+  createdAt: string;
+  detalles: BackendTicketDetail[];
+}
+
+export interface TicketPurchaseItem {
+  eventoEntradaId: number;
+  cantidad: number;
+}
+
+export const ticketApi = {
+  async purchase(items: TicketPurchaseItem[]): Promise<BackendTicketPurchase> {
+    const response = await fetch(`${API_BASE_URL}/tickets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ items }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al realizar la compra');
+    }
+    return response.json();
+  },
+
+  async getMyTickets(): Promise<BackendTicketPurchase[]> {
+    const response = await fetch(`${API_BASE_URL}/tickets/my`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al obtener tus compras');
+    }
+    return response.json();
+  },
+};
+
 export interface AuthUser {
   id: number;
   nombre: string;
