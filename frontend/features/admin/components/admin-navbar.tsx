@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, CalendarDays, LayoutDashboard, LogOut, Tag, Users } from "lucide-react"
+import { BarChart3, CalendarDays, LayoutDashboard, LogOut, Tag, Ticket, Users } from "lucide-react"
 import { useAuth } from "@/shared/providers/auth-context"
 import { Button } from "@/shared/components/ui/button"
 import { AppNavbar, type AppNavbarItem } from "@/shared/components/app-navbar"
@@ -18,7 +18,7 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
       id: "gestion",
       label: "Gestión",
       icon: LayoutDashboard,
-      active: currentView === "gestion-eventos" || currentView === "gestion-categorias",
+      active: currentView === "gestion-eventos",
       onClick: () => onViewChange("gestion-eventos"),
       children: [
         {
@@ -28,12 +28,28 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
           active: currentView === "gestion-eventos",
           onClick: () => onViewChange("gestion-eventos"),
         },
+      ],
+    },
+    {
+      id: "categorias",
+      label: "Categorías",
+      icon: Tag,
+      active: currentView === "categorias-eventos" || currentView === "categorias-boletas",
+      onClick: () => onViewChange("categorias-eventos"),
+      children: [
         {
-          id: "gestion-categorias",
-          label: "Categorías",
-          icon: Tag,
-          active: currentView === "gestion-categorias",
-          onClick: () => onViewChange("gestion-categorias"),
+          id: "categorias-eventos",
+          label: "Eventos",
+          icon: CalendarDays,
+          active: currentView === "categorias-eventos",
+          onClick: () => onViewChange("categorias-eventos"),
+        },
+        {
+          id: "categorias-boletas",
+          label: "Boletas",
+          icon: Ticket,
+          active: currentView === "categorias-boletas",
+          onClick: () => onViewChange("categorias-boletas"),
         },
       ],
     },

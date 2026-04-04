@@ -15,7 +15,8 @@ export default function AdminPage() {
       <AdminNavbar currentView={currentView} onViewChange={setCurrentView} />
       <main className="flex-1">
         {currentView === "gestion-eventos" && <AdminDashboard section="events" />}
-        {currentView === "gestion-categorias" && <AdminDashboard section="categories" />}
+        {currentView === "categorias-eventos" && <AdminDashboard section="categories" />}
+        {currentView === "categorias-boletas" && <AdminDashboard section="ticket-categories" />}
         {currentView === "reporte-eventos" && <ReportView />}
         {currentView === "reporte-usuarios" && <ReportUsersView />}
       </main>
