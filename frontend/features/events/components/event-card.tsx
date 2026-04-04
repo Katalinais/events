@@ -2,12 +2,13 @@
 
 import { useState, useRef, useLayoutEffect, useEffect } from "react"
 import Image from "next/image"
-import { CalendarDays, Heart, ChevronDown, ChevronUp } from "lucide-react"
+import { CalendarDays, Heart, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Badge } from "@/shared/components/ui/badge"
 import { useEventContext } from "@/shared/providers/event-context"
 import { useAuth } from "@/shared/providers/auth-context"
 import { useMarkInterested, useUnmarkInterested } from "@/shared/hooks/use-events"
+import { PurchaseDialog } from "./purchase-dialog"
 import type { EventItem } from "@/features/events/types"
 
 function isTruncated(el: HTMLElement | null): boolean {
@@ -29,6 +30,7 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
   const [expanded, setExpanded] = useState(false)
   const [needsVerMas, setNeedsVerMas] = useState(false)
   const [isFavorite, setIsFavorite] = useState(initialFavorite)
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const descRef = useRef<HTMLParagraphElement>(null)
 
@@ -160,7 +162,17 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
           </button>
         )}
 
-        <div className="mt-auto flex shrink-0 justify-end border-t border-border/60 pt-3">
+        <div className="mt-auto flex shrink-0 items-center justify-between border-t border-border/60 pt-3">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsPurchaseOpen(true)}
+            className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Comprar
+          </Button>
+
           <Button
             type="button"
             size="icon"
@@ -178,6 +190,13 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
           </Button>
         </div>
       </div>
+
+      <PurchaseDialog
+        open={isPurchaseOpen}
+        onOpenChange={setIsPurchaseOpen}
+        eventId={event.id}
+        eventName={event.name}
+      />
     </article>
   )
 }
