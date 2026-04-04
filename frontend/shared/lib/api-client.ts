@@ -303,6 +303,65 @@ export const categoryApi = {
   },
 };
 
+export interface BackendCategoriaEntrada {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function mapCategoriaEntradaToFrontend(c: BackendCategoriaEntrada): CategoryItem {
+  return { id: String(c.id), name: c.nombre };
+}
+
+export const ticketCategoryApi = {
+  async getTicketCategories(): Promise<CategoryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/ticket-categories`);
+    if (!response.ok) throw new Error('Error al obtener categorías de boletas');
+    const data: BackendCategoriaEntrada[] = await response.json();
+    return data.map(mapCategoriaEntradaToFrontend);
+  },
+
+  async createTicketCategory(name: string): Promise<CategoryItem> {
+    const response = await fetch(`${API_BASE_URL}/ticket-categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: name.trim() }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al crear la categoría de boleta');
+    }
+    const data: BackendCategoriaEntrada = await response.json();
+    return mapCategoriaEntradaToFrontend(data);
+  },
+
+  async updateTicketCategory(id: string, name: string): Promise<CategoryItem> {
+    const response = await fetch(`${API_BASE_URL}/ticket-categories/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: name.trim() }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al actualizar la categoría de boleta');
+    }
+    const data: BackendCategoriaEntrada = await response.json();
+    return mapCategoriaEntradaToFrontend(data);
+  },
+
+  async deleteTicketCategory(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/ticket-categories/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al eliminar la categoría de boleta');
+    }
+  },
+};
+
 export interface AuthUser {
   id: number;
   nombre: string;
