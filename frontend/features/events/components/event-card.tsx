@@ -196,6 +196,7 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
         onOpenChange={setIsPurchaseOpen}
         eventId={event.id}
         eventName={event.name}
+        onRequestLogin={onRequestLogin}
       />
     </article>
   )
