@@ -4,7 +4,7 @@ import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
-import { EntradaItemDto } from './dto/save-entradas.dto';
+import { TicketEntryItemDto } from './dto/save-ticket-entries.dto';
 import { EventRepository } from './event.repository';
 
 @Injectable()
@@ -127,7 +127,7 @@ export class EventService {
     return this.eventRepository.findEntradasByEventoId(eventoId);
   }
 
-  async saveEntradas(eventoId: number, entradas: EntradaItemDto[]) {
+  async saveEntradas(eventoId: number, entradas: TicketEntryItemDto[]) {
     await this.findOne(eventoId);
 
     for (const entrada of entradas) {

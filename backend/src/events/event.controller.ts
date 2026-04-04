@@ -23,7 +23,7 @@ import { extname } from 'path';
 import { EventService } from './event.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
-import { SaveEntradasDto } from './dto/save-entradas.dto';
+import { SaveTicketEntriesDto } from './dto/save-ticket-entries.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -130,7 +130,7 @@ export class EventController {
   @HttpCode(HttpStatus.OK)
   saveEntradas(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: SaveEntradasDto,
+    @Body() dto: SaveTicketEntriesDto,
   ) {
     return this.eventService.saveEntradas(id, dto.entradas);
   }
