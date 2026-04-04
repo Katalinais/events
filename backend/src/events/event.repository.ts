@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { Evento, Prisma } from '@prisma/client';
+import type { Evento, EventoEntrada, Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventRepository {
@@ -108,5 +108,58 @@ export class EventRepository {
     return this.prisma.usuarioInteresado.deleteMany({
       where: { usuarioId, eventoId },
     });
+  }
+
+  findEntradasByEventoId(eventoId: number): Promise<EventoEntrada[]> {
+    return this.prisma.eventoEntrada.findMany({
+      where: { eventoId },
+      orderBy: { categoriaEntradaId: 'asc' },
+    });
+  }
+
+  async saveEntradas(
+    eventoId: number,
+    entradas: { categoriaEntradaId: number; cantidadTotal: number; precio: number }[],
+  ): Promise<EventoEntrada[]> {
+    const incomingIds = entradas.map((e) => e.categoriaEntradaId);
+
+    await this.prisma.eventoEntrada.deleteMany({
+      where: { eventoId, categoriaEntradaId: { notIn: incomingIds } },
+    });
+
+    const results: EventoEntrada[] = [];
+
+    for (const entrada of entradas) {
+      const existing = await this.prisma.eventoEntrada.findFirst({
+        where: { eventoId, categoriaEntradaId: entrada.categoriaEntradaId },
+      });
+
+      if (existing) {
+        const diff = entrada.cantidadTotal - existing.cantidadTotal;
+        const newDisponible = Math.max(0, existing.cantidadDisponible + diff);
+        const updated = await this.prisma.eventoEntrada.update({
+          where: { id: existing.id },
+          data: {
+            cantidadTotal: entrada.cantidadTotal,
+            cantidadDisponible: newDisponible,
+            precio: entrada.precio,
+          },
+        });
+        results.push(updated);
+      } else {
+        const created = await this.prisma.eventoEntrada.create({
+          data: {
+            eventoId,
+            categoriaEntradaId: entrada.categoriaEntradaId,
+            cantidadTotal: entrada.cantidadTotal,
+            cantidadDisponible: entrada.cantidadTotal,
+            precio: entrada.precio,
+          },
+        });
+        results.push(created);
+      }
+    }
+
+    return results;
   }
 }

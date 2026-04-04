@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
+import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
+import { EntradaItemDto } from './dto/save-entradas.dto';
 import { EventRepository } from './event.repository';
 
 @Injectable()
@@ -10,6 +12,7 @@ export class EventService {
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly ticketCategoryRepository: TicketCategoryRepository,
   ) {}
 
   private async ensureCategoryExists(categoriaId: number | null | undefined) {
@@ -117,6 +120,28 @@ export class EventService {
 
     const total = await this.eventRepository.countInteresadosByEventoId(eventoId);
     return { interesados: total };
+  }
+
+  async findEntradas(eventoId: number) {
+    await this.findOne(eventoId);
+    return this.eventRepository.findEntradasByEventoId(eventoId);
+  }
+
+  async saveEntradas(eventoId: number, entradas: EntradaItemDto[]) {
+    await this.findOne(eventoId);
+
+    for (const entrada of entradas) {
+      const cat = await this.ticketCategoryRepository.findFirstActiveById(
+        entrada.categoriaEntradaId,
+      );
+      if (!cat) {
+        throw new BadRequestException(
+          `Categoría de boleta con ID ${entrada.categoriaEntradaId} no encontrada`,
+        );
+      }
+    }
+
+    return this.eventRepository.saveEntradas(eventoId, entradas);
   }
 
   async unmarkInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {

@@ -4,10 +4,11 @@ import { EventController } from './event.controller';
 import { EventRepository } from './event.repository';
 import { AuthModule } from '../auth/auth.module';
 import { CategoryModule } from '../categories/category.module';
+import { TicketCategoryModule } from '../ticket-categories/ticket-category.module';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Module({
-  imports: [AuthModule, CategoryModule],
+  imports: [AuthModule, CategoryModule, TicketCategoryModule],
   controllers: [EventController],
   providers: [EventService, EventRepository, PrismaService],
   exports: [EventService],
