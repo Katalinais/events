@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import type { Prisma } from '@prisma/client';
+import { CategoryRepository } from '../categories/category.repository';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
+import { EventRepository } from './event.repository';
 
 @Injectable()
 export class EventService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly eventRepository: EventRepository,
+    private readonly categoryRepository: CategoryRepository,
+  ) {}
 
   private async ensureCategoryExists(categoriaId: number | null | undefined) {
     if (categoriaId == null) return;
-    const cat = await this.prisma.categoria.findFirst({
-      where: { id: categoriaId, deletedAt: null },
-    });
+    const cat = await this.categoryRepository.findFirstActiveById(categoriaId);
     if (!cat) {
       throw new BadRequestException(`Categoría con ID ${categoriaId} no encontrada`);
     }
@@ -22,49 +25,26 @@ export class EventService {
     const fecha = createEventoDto.fecha?.trim()
       ? new Date(createEventoDto.fecha)
       : new Date();
-    return this.prisma.evento.create({
-      data: {
-        nombre: createEventoDto.nombre,
-        descripcion: createEventoDto.descripcion,
-        precio: createEventoDto.precio ?? 0,
-        urlImagen: createEventoDto.urlImagen ?? null,
-        fecha,
-        categoriaId: createEventoDto.categoriaId ?? null,
-      },
+    return this.eventRepository.create({
+      nombre: createEventoDto.nombre,
+      descripcion: createEventoDto.descripcion,
+      precio: createEventoDto.precio ?? 0,
+      urlImagen: createEventoDto.urlImagen ?? null,
+      fecha,
+      categoriaId: createEventoDto.categoriaId ?? null,
     });
   }
 
   async findAll() {
-    return this.prisma.evento.findMany({
-      where: { deletedAt: null },
-      orderBy: { fecha: 'asc' },
-      include: { _count: { select: { interesados: true } } },
-    });
+    return this.eventRepository.findAllActiveWithInteresadosCount();
   }
 
-
   async findReportWithInterestedUsers() {
-    return this.prisma.evento.findMany({
-      where: { deletedAt: null },
-      orderBy: { fecha: 'asc' },
-      include: {
-        _count: { select: { interesados: true } },
-        interesados: {
-          include: {
-            usuario: {
-              select: { id: true, nombre: true, username: true, correo: true },
-            },
-          },
-        },
-      },
-    });
+    return this.eventRepository.findReportWithInterestedUsers();
   }
 
   async findOne(id: number) {
-    const evento = await this.prisma.evento.findFirst({
-      where: { id, deletedAt: null },
-      include: { _count: { select: { interesados: true } } },
-    });
+    const evento = await this.eventRepository.findFirstActiveByIdWithInteresadosCount(id);
 
     if (!evento) {
       throw new NotFoundException(`Evento con ID ${id} no encontrado`);
@@ -77,7 +57,7 @@ export class EventService {
     await this.findOne(id);
     await this.ensureCategoryExists(updateEventoDto.categoriaId);
 
-    const data: any = {};
+    const data: Prisma.EventoUncheckedUpdateInput = {};
 
     if (updateEventoDto.nombre !== undefined) {
       data.nombre = updateEventoDto.nombre;
@@ -98,50 +78,23 @@ export class EventService {
       data.categoriaId = updateEventoDto.categoriaId;
     }
 
-    return this.prisma.evento.update({
-      where: { id },
-      data,
-    });
+    return this.eventRepository.update(id, data);
   }
 
   async remove(id: number) {
     await this.findOne(id);
 
-    return this.prisma.evento.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    return this.eventRepository.softDeleteById(id);
   }
 
   async findUpcoming(limit: number = 10) {
     const now = new Date();
 
-    return this.prisma.evento.findMany({
-      where: {
-        deletedAt: null,
-        fecha: { gte: now },
-      },
-      orderBy: { fecha: 'asc' },
-      take: limit,
-      include: { _count: { select: { interesados: true } } },
-    });
+    return this.eventRepository.findUpcomingActive(now, limit);
   }
 
   async findFavoritesByUser(usuarioId: number) {
-    const favoritos = await this.prisma.usuarioInteresado.findMany({
-      where: {
-        usuarioId,
-        evento: {
-          deletedAt: null,
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        evento: {
-          include: { _count: { select: { interesados: true } } },
-        },
-      },
-    });
+    const favoritos = await this.eventRepository.findUsuarioInteresadosForUserFavorites(usuarioId);
 
     return favoritos
       .map((fav) => fav.evento)
@@ -155,18 +108,14 @@ export class EventService {
     await this.findOne(eventoId);
 
     try {
-      await this.prisma.usuarioInteresado.create({
-        data: { usuarioId, eventoId },
-      });
+      await this.eventRepository.createUsuarioInteresado(usuarioId, eventoId);
     } catch (e: unknown) {
       const isUniqueViolation =
         e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002';
       if (!isUniqueViolation) throw e;
     }
 
-    const total = await this.prisma.usuarioInteresado.count({
-      where: { eventoId },
-    });
+    const total = await this.eventRepository.countInteresadosByEventoId(eventoId);
     return { interesados: total };
   }
 
@@ -176,13 +125,9 @@ export class EventService {
     }
     await this.findOne(eventoId);
 
-    await this.prisma.usuarioInteresado.deleteMany({
-      where: { usuarioId, eventoId },
-    });
+    await this.eventRepository.deleteManyUsuarioInteresado(usuarioId, eventoId);
 
-    const total = await this.prisma.usuarioInteresado.count({
-      where: { eventoId },
-    });
+    const total = await this.eventRepository.countInteresadosByEventoId(eventoId);
     return { interesados: total };
   }
 }

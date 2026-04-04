@@ -1,35 +1,27 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { CategoryRepository } from './category.repository';
 
 @Injectable()
 export class CategoryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly categoryRepository: CategoryRepository) {}
 
   async create(createCategoriaDto: CreateCategoriaDto) {
-    const existing = await this.prisma.categoria.findFirst({
-      where: { deletedAt: null, nombre: { equals: createCategoriaDto.nombre, mode: 'insensitive' } },
-    });
+    const nombre = createCategoriaDto.nombre.trim();
+    const existing = await this.categoryRepository.findActiveByNombreInsensitive(nombre);
     if (existing) {
       throw new ConflictException('Ya existe una categoría con ese nombre');
     }
-    return this.prisma.categoria.create({
-      data: { nombre: createCategoriaDto.nombre.trim() },
-    });
+    return this.categoryRepository.create(nombre);
   }
 
   async findAll() {
-    return this.prisma.categoria.findMany({
-      where: { deletedAt: null },
-      orderBy: { nombre: 'asc' },
-    });
+    return this.categoryRepository.findAllActive();
   }
 
   async findOne(id: number) {
-    const categoria = await this.prisma.categoria.findFirst({
-      where: { id, deletedAt: null },
-    });
+    const categoria = await this.categoryRepository.findFirstActiveById(id);
     if (!categoria) {
       throw new NotFoundException(`Categoría con ID ${id} no encontrada`);
     }
@@ -39,34 +31,25 @@ export class CategoryService {
   async update(id: number, updateCategoriaDto: UpdateCategoriaDto) {
     await this.findOne(id);
     if (updateCategoriaDto.nombre !== undefined) {
-      const existing = await this.prisma.categoria.findFirst({
-        where: {
-          deletedAt: null,
-          nombre: { equals: updateCategoriaDto.nombre.trim(), mode: 'insensitive' },
-          id: { not: id },
-        },
-      });
+      const nombre = updateCategoriaDto.nombre.trim();
+      const existing = await this.categoryRepository.findOtherActiveByNombreInsensitive(
+        nombre,
+        id,
+      );
       if (existing) {
         throw new ConflictException('Ya existe una categoría con ese nombre');
       }
+      return this.categoryRepository.update(id, { nombre });
     }
-    return this.prisma.categoria.update({
-      where: { id },
-      data: updateCategoriaDto.nombre !== undefined ? { nombre: updateCategoriaDto.nombre.trim() } : {},
-    });
+    return this.categoryRepository.update(id, {});
   }
 
   async remove(id: number) {
     await this.findOne(id);
-    const eventsWithCategory = await this.prisma.evento.count({
-      where: { categoriaId: id, deletedAt: null },
-    });
+    const eventsWithCategory = await this.categoryRepository.countActiveEventsByCategoriaId(id);
     if (eventsWithCategory > 0) {
       throw new ConflictException('No se puede eliminar: tiene eventos asociados');
     }
-    return this.prisma.categoria.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    return this.categoryRepository.softDeleteById(id);
   }
 }
