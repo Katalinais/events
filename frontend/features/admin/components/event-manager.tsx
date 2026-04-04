@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import {
   Plus,
@@ -9,6 +9,7 @@ import {
   CalendarDays,
   AlertCircle,
   ImageIcon,
+  X,
 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -56,6 +57,8 @@ import {
 import { Badge } from "@/shared/components/ui/badge"
 import { useEventContext } from "@/shared/providers/event-context"
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/shared/hooks/use-events"
+import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
+import { useEventoEntradas, useSaveEventoEntradas } from "@/shared/hooks/use-evento-entradas"
 import { uploadEventImage, type EventItem } from "@/shared/lib/api-client"
 import { toast } from "sonner"
 
@@ -65,7 +68,12 @@ interface EventFormData {
   date: string
   categoryId: string
   imageUrl: string
-  price: string
+}
+
+interface EntradaFormRow {
+  categoriaEntradaId: string
+  cantidadTotal: string
+  precio: string
 }
 
 const defaultFormData: EventFormData = {
@@ -74,15 +82,16 @@ const defaultFormData: EventFormData = {
   date: "",
   categoryId: "",
   imageUrl: "",
-  price: "",
 }
 
 export function EventManager() {
   const { categories, getCategoryName } = useEventContext()
   const { data: events = [] } = useEvents()
+  const { data: ticketCategories = [] } = useTicketCategories()
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
+  const saveEntradas = useSaveEventoEntradas()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<EventItem | null>(null)
@@ -90,18 +99,36 @@ export function EventManager() {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof EventFormData, string>>>({})
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [entradas, setEntradas] = useState<EntradaFormRow[]>([])
   const imagePreviewUrlRef = useRef<string | null>(null)
 
+  const { data: existingEntradas = [] } = useEventoEntradas(editingEvent?.id ?? null)
+
   const sortedEvents = [...events].sort((a, b) => b.interested - a.interested)
+
+  const [entradasError, setEntradasError] = useState<string | null>(null)
 
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio"
-    if (formData.price && isNaN(Number(formData.price)))
-      errors.price = "El precio debe ser un numero"
     setFormErrors(errors)
+    const validEntradas = entradas.filter((e) => e.categoriaEntradaId && e.cantidadTotal && e.precio)
+    if (validEntradas.length === 0) {
+      setEntradasError("Debes agregar al menos una boleta")
+      return false
+    }
+    setEntradasError(null)
     return Object.keys(errors).length === 0
   }
+
+  const buildEntradasPayload = () =>
+    entradas
+      .filter((e) => e.categoriaEntradaId && e.cantidadTotal && e.precio)
+      .map((e) => ({
+        categoriaEntradaId: Number(e.categoriaEntradaId),
+        cantidadTotal: Number(e.cantidadTotal),
+        precio: Number(e.precio),
+      }))
 
   const handleCreate = async () => {
     if (!validateForm()) return
@@ -111,15 +138,20 @@ export function EventManager() {
       if (imageFile) {
         imageUrl = await uploadEventImage(imageFile)
       }
-      await createEvent.mutateAsync({
+      const newEvent = await createEvent.mutateAsync({
         name: formData.name.trim(),
         description: formData.description.trim(),
         date: formData.date || new Date().toISOString().slice(0, 10),
         categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
         imageUrl: imageUrl || "",
-        price: formData.price ? Number(formData.price) : 0,
+        price: 0,
       })
+      const payload = buildEntradasPayload()
+      if (payload.length > 0) {
+        await saveEntradas.mutateAsync({ eventoId: newEvent.id, entradas: payload })
+      }
       setFormData(defaultFormData)
+      setEntradas([])
       setImageFile(null)
       if (imagePreviewUrlRef.current) {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -150,10 +182,13 @@ export function EventManager() {
         date: formData.date,
         categoryId: formData.categoryId === "none" ? "" : formData.categoryId,
         imageUrl,
-        price: formData.price ? Number(formData.price) : 0,
+        price: 0,
       })
+      const payload = buildEntradasPayload()
+      await saveEntradas.mutateAsync({ eventoId: editingEvent.id, entradas: payload })
       setEditingEvent(null)
       setFormData(defaultFormData)
+      setEntradas([])
       setImageFile(null)
       if (imagePreviewUrlRef.current) {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -181,6 +216,8 @@ export function EventManager() {
   const openCreate = () => {
     setFormData(defaultFormData)
     setFormErrors({})
+    setEntradas([])
+    setEntradasError(null)
     setImageFile(null)
     if (imagePreviewUrlRef.current) {
       URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -197,15 +234,27 @@ export function EventManager() {
       date: event.date,
       categoryId: event.categoryId || "none",
       imageUrl: event.imageUrl,
-      price: event.price.toString(),
     })
     setFormErrors({})
+    setEntradasError(null)
     setImageFile(null)
     if (imagePreviewUrlRef.current) {
       URL.revokeObjectURL(imagePreviewUrlRef.current)
       imagePreviewUrlRef.current = null
     }
   }
+
+  useEffect(() => {
+    if (existingEntradas.length > 0) {
+      setEntradas(
+        existingEntradas.map((e) => ({
+          categoriaEntradaId: e.categoriaEntradaId,
+          cantidadTotal: String(e.cantidadTotal),
+          precio: String(e.precio),
+        })),
+      )
+    }
+  }, [existingEntradas])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -309,25 +358,6 @@ export function EventManager() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="event-price">Precio(COP)</Label>
-        <Input
-          id="event-price"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0.00"
-          value={formData.price}
-          onChange={(e) => updateField("price", e.target.value)}
-        />
-        {formErrors.price && (
-          <p className="flex items-center gap-1 text-sm text-destructive">
-            <AlertCircle className="h-3.5 w-3.5" />
-            {formErrors.price}
-          </p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-2">
         <Label>Imagen</Label>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
@@ -362,6 +392,98 @@ export function EventManager() {
             <AlertCircle className="h-3.5 w-3.5" />
             {formErrors.imageUrl}
           </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <Label>
+            Boletas <span className="text-destructive">*</span>
+          </Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={() =>
+              setEntradas((prev) => [...prev, { categoriaEntradaId: "", cantidadTotal: "", precio: "" }])
+            }
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Agregar
+          </Button>
+        </div>
+
+        {entradasError && (
+          <p className="flex items-center gap-1 text-sm text-destructive">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {entradasError}
+          </p>
+        )}
+        {entradas.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No se han agregado boletas.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {entradas.map((entrada, index) => (
+              <div key={index} className="grid grid-cols-[1fr_80px_90px_32px] items-center gap-2">
+                <Select
+                  value={entrada.categoriaEntradaId || "none"}
+                  onValueChange={(v) =>
+                    setEntradas((prev) =>
+                      prev.map((e, i) => (i === index ? { ...e, categoriaEntradaId: v === "none" ? "" : v } : e)),
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Categoría</SelectItem>
+                    {ticketCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Cant."
+                  className="h-8 text-xs"
+                  value={entrada.cantidadTotal}
+                  onChange={(e) =>
+                    setEntradas((prev) =>
+                      prev.map((row, i) => (i === index ? { ...row, cantidadTotal: e.target.value } : row)),
+                    )
+                  }
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Precio"
+                  className="h-8 text-xs"
+                  value={entrada.precio}
+                  onChange={(e) =>
+                    setEntradas((prev) =>
+                      prev.map((row, i) => (i === index ? { ...row, precio: e.target.value } : row)),
+                    )
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={() => setEntradas((prev) => prev.filter((_, i) => i !== index))}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">Categoría · Cantidad · Precio (COP)</p>
+          </div>
         )}
       </div>
     </div>
