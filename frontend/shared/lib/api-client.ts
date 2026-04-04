@@ -303,6 +303,59 @@ export const categoryApi = {
   },
 };
 
+export interface EventoEntradaItem {
+  id: string
+  categoriaEntradaId: string
+  cantidadTotal: number
+  cantidadDisponible: number
+  precio: number
+}
+
+export interface BackendEventoEntrada {
+  id: number
+  eventoId: number
+  categoriaEntradaId: number
+  cantidadTotal: number
+  cantidadDisponible: number
+  precio: number
+}
+
+function mapEventoEntrada(e: BackendEventoEntrada): EventoEntradaItem {
+  return {
+    id: String(e.id),
+    categoriaEntradaId: String(e.categoriaEntradaId),
+    cantidadTotal: e.cantidadTotal,
+    cantidadDisponible: e.cantidadDisponible,
+    precio: e.precio,
+  }
+}
+
+export const eventoEntradasApi = {
+  async getEntradas(eventoId: string): Promise<EventoEntradaItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventoId}/entradas`)
+    if (!response.ok) throw new Error('Error al obtener las entradas del evento')
+    const data: BackendEventoEntrada[] = await response.json()
+    return data.map(mapEventoEntrada)
+  },
+
+  async saveEntradas(
+    eventoId: string,
+    entradas: { categoriaEntradaId: number; cantidadTotal: number; precio: number }[],
+  ): Promise<EventoEntradaItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventoId}/entradas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entradas }),
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || 'Error al guardar las entradas')
+    }
+    const data: BackendEventoEntrada[] = await response.json()
+    return data.map(mapEventoEntrada)
+  },
+}
+
 export interface BackendCategoriaEntrada {
   id: number;
   nombre: string;
