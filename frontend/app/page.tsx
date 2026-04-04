@@ -42,7 +42,7 @@ function HomeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col sm:flex-row">
+    <div className="h-screen overflow-hidden bg-background flex flex-col sm:flex-row">
       {!showLogin && (
         <PublicNavbar
           onOpenLogin={() => setShowLogin(true)}
@@ -54,7 +54,7 @@ function HomeContent() {
         />
       )}
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
         {showLogin && (
           <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">

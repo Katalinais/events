@@ -34,10 +34,10 @@ export default function UserLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col sm:flex-row">
+    <div className="h-screen overflow-hidden bg-background flex flex-col sm:flex-row">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
         <div className="w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
       </main>
     </div>
