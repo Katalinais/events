@@ -35,6 +35,12 @@ export class TicketController {
     return this.ticketService.create(userId, createTicketDto);
   }
 
+  @Get('total-earnings')
+  async getTotalEarnings() {
+    const total = await this.ticketService.getTotalEarnings();
+    return { total };
+  }
+
   @Get('my')
   findMyTickets(@Req() req: Request & { user?: { userId: number } }) {
     const userId = req.user?.userId;

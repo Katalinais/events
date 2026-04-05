@@ -62,6 +62,11 @@ export class TicketRepository {
     });
   }
 
+  async getTotalEarnings(): Promise<number> {
+    const result = await this.prisma.venta.aggregate({ _sum: { total: true } });
+    return result._sum.total ?? 0;
+  }
+
   findTicketsByUser(usuarioId: number) {
     return this.prisma.venta.findMany({
       where: { usuarioId },
