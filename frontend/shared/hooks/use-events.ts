@@ -54,6 +54,13 @@ export function useFavoriteEvents(options?: { enabled?: boolean }) {
   })
 }
 
+export function usePastEvents() {
+  return useQuery({
+    queryKey: [...eventKeys.all, 'past'] as const,
+    queryFn: () => eventApi.getPastEvents(),
+  })
+}
+
 export function useAdminEvents() {
   return useQuery({
     queryKey: eventKeys.adminList(),
