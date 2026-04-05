@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
@@ -6,13 +6,20 @@ import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
 import { TicketEntryItemDto } from './dto/save-ticket-entries.dto';
 import { EventRepository } from './event.repository';
+import { CacheService } from '../shared/cache.service';
+
+export const TOP_SELLING_CACHE_KEY = 'events:top-selling';
+const TOP_SELLING_TTL_MS = 10 * 60 * 1000;
 
 @Injectable()
 export class EventService {
+  private readonly logger = new Logger(EventService.name);
+
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly categoryRepository: CategoryRepository,
     private readonly ticketCategoryRepository: TicketCategoryRepository,
+    private readonly cacheService: CacheService,
   ) {}
 
   private async ensureCategoryExists(categoriaId: number | null | undefined) {
@@ -150,6 +157,19 @@ export class EventService {
     }
 
     return this.eventRepository.saveEntradas(eventoId, entradas);
+  }
+
+  async findTopSelling() {
+    const cached = this.cacheService.get(TOP_SELLING_CACHE_KEY, TOP_SELLING_TTL_MS);
+    if (cached) {
+      this.logger.debug('Top selling desde caché');
+      return cached;
+    }
+
+    this.logger.log('Repoblando caché de top selling desde DB');
+    const result = await this.eventRepository.findTopSelling(3);
+    this.cacheService.set(TOP_SELLING_CACHE_KEY, result);
+    return result;
   }
 
   async unmarkInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {

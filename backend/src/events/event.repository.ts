@@ -18,6 +18,42 @@ export class EventRepository {
     return this.prisma.evento.create({ data });
   }
 
+  async findTopSelling(limit: number) {
+    const results = await this.prisma.detalleBoleta.groupBy({
+      by: ['eventoEntradaId'],
+      _sum: { cantidad: true },
+      orderBy: { _sum: { cantidad: 'desc' } },
+    });
+
+    // Resolve eventoId for each eventoEntradaId and aggregate by event
+    const eventoTotals = new Map<number, number>();
+    for (const r of results) {
+      const entrada = await this.prisma.eventoEntrada.findFirst({
+        where: { id: r.eventoEntradaId },
+        select: { eventoId: true },
+      });
+      if (!entrada) continue;
+      const prev = eventoTotals.get(entrada.eventoId) ?? 0;
+      eventoTotals.set(entrada.eventoId, prev + (r._sum.cantidad ?? 0));
+    }
+
+    const sorted = [...eventoTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit);
+
+    const eventos = await Promise.all(
+      sorted.map(async ([eventoId, totalVendidas]) => {
+        const evento = await this.prisma.evento.findFirst({
+          where: { id: eventoId, deletedAt: null, estado: EstadoEvento.ACTIVO },
+          include: { _count: { select: { interesados: true } } },
+        });
+        return evento ? { ...evento, totalVendidas } : null;
+      }),
+    );
+
+    return eventos.filter((e): e is NonNullable<typeof e> => e !== null);
+  }
+
   findAllCompleted() {
     return this.prisma.evento.findMany({
       where: { deletedAt: null, estado: EstadoEvento.COMPLETADO },

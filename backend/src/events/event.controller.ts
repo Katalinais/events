@@ -83,6 +83,11 @@ export class EventController {
     return this.eventService.findCompleted();
   }
 
+  @Get('top-selling')
+  findTopSelling() {
+    return this.eventService.findTopSelling();
+  }
+
   @Get('favorites')
   @UseGuards(JwtAuthGuard)
   findFavorites(@Req() req: Request & { user?: { userId: number } }) {

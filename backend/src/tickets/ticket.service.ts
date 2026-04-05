@@ -2,10 +2,15 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
 import { generateTicketPdf } from '../utils/pdf.util';
+import { CacheService } from '../shared/cache.service';
+import { TOP_SELLING_CACHE_KEY } from '../events/event.service';
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly ticketRepository: TicketRepository) {}
+  constructor(
+    private readonly ticketRepository: TicketRepository,
+    private readonly cacheService: CacheService,
+  ) {}
 
   async create(usuarioId: number, dto: CreateTicketDto) {
     const resolvedItems: {
@@ -45,7 +50,9 @@ export class TicketService {
       await this.ticketRepository.decrementDisponible(item.eventoEntradaId, item.cantidad);
     }
 
-    return this.ticketRepository.createTicketWithDetails(usuarioId, total, resolvedItems);
+    const result = await this.ticketRepository.createTicketWithDetails(usuarioId, total, resolvedItems);
+    this.cacheService.invalidate(TOP_SELLING_CACHE_KEY);
+    return result;
   }
 
   findByUser(usuarioId: number) {
