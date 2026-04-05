@@ -57,7 +57,7 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
       id: "reporte",
       label: "Reporte",
       icon: BarChart3,
-      active: currentView === "reporte-eventos" || currentView === "reporte-usuarios",
+      active: currentView === "reporte-eventos" || currentView === "reporte-usuarios" || currentView === "reporte-boletas",
       onClick: () => onViewChange("reporte-eventos"),
       children: [
         {
@@ -73,6 +73,13 @@ export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
           icon: Users,
           active: currentView === "reporte-usuarios",
           onClick: () => onViewChange("reporte-usuarios"),
+        },
+        {
+          id: "reporte-boletas",
+          label: "Boletas vendidas",
+          icon: Ticket,
+          active: currentView === "reporte-boletas",
+          onClick: () => onViewChange("reporte-boletas"),
         },
       ],
     },

@@ -206,6 +206,30 @@ export const eventApi = {
     return eventos.map(mapBackendToFrontend);
   },
 
+  async getAllEventsSalesSummary(): Promise<{ eventoId: number; eventoNombre: string; totalEntradas: number; gananciaTotal: number }[]> {
+    const response = await fetch(`${API_BASE_URL}/events/sales-summary`, {
+      headers: { ...getAuthHeaders() },
+    })
+    if (!response.ok) throw new Error('Error al obtener resumen de ventas')
+    return response.json()
+  },
+
+  async getEventSalesReport(eventId: string): Promise<{
+    eventoNombre: string
+    lineas: { categoria: string; precioUnitario: number; cantidadVendida: number; ganancia: number }[]
+    totalEntradas: number
+    gananciaTotal: number
+  }> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/sales-report`, {
+      headers: { ...getAuthHeaders() },
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || 'Error al obtener el reporte')
+    }
+    return response.json()
+  },
+
   async getTopSellingEvents(): Promise<(EventItem & { totalVendidas: number })[]> {
     const response = await fetch(`${API_BASE_URL}/events/top-selling`);
     if (!response.ok) throw new Error('Error al obtener top eventos');

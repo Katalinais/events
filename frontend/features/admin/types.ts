@@ -4,3 +4,4 @@ export type AdminNavView =
   | "categorias-boletas"
   | "reporte-eventos"
   | "reporte-usuarios"
+  | "reporte-boletas"
