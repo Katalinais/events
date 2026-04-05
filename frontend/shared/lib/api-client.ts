@@ -494,6 +494,15 @@ export interface TicketPurchaseItem {
 }
 
 export const ticketApi = {
+  async getTotalEarnings(): Promise<number> {
+    const response = await fetch(`${API_BASE_URL}/tickets/total-earnings`, {
+      headers: { ...getAuthHeaders() },
+    })
+    if (!response.ok) throw new Error('Error al obtener ganancias')
+    const data: { total: number } = await response.json()
+    return data.total
+  },
+
   async purchase(items: TicketPurchaseItem[]): Promise<BackendTicketPurchase> {
     const response = await fetch(`${API_BASE_URL}/tickets`, {
       method: 'POST',

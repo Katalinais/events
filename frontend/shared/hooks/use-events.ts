@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { eventApi, userApi, type EventItem } from "@/shared/lib/api-client"
+import { eventApi, ticketApi, userApi, type EventItem } from "@/shared/lib/api-client"
 import { toast } from "sonner"
 
 export const eventKeys = {
@@ -51,6 +51,13 @@ export function useFavoriteEvents(options?: { enabled?: boolean }) {
     queryKey: eventKeys.favorites(),
     queryFn: () => eventApi.getFavoriteEvents(),
     enabled,
+  })
+}
+
+export function useTotalEarnings() {
+  return useQuery({
+    queryKey: [...eventKeys.all, 'total-earnings'] as const,
+    queryFn: () => ticketApi.getTotalEarnings(),
   })
 }
 

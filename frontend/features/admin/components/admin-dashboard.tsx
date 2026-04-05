@@ -3,6 +3,7 @@
   import { CategoryManager } from "@/features/admin/components/category-manager"
   import { EventManager } from "@/features/admin/components/event-manager"
   import { TicketCategoryManager } from "@/features/admin/components/ticket-category-manager"
+  import { AdminMetrics } from "@/features/admin/components/admin-metrics"
 
   interface AdminDashboardProps {
     section: "events" | "categories" | "event-categories" | "ticket-categories"
@@ -23,6 +24,7 @@
           </p>
         </div>
 
+        {section === "events" && <AdminMetrics />}
         {section === "events" && <EventManager />}
         {section === "categories" && <CategoryManager />}
         {section === "event-categories" && <CategoryManager />}
