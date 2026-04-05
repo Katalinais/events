@@ -54,6 +54,13 @@ export function useFavoriteEvents(options?: { enabled?: boolean }) {
   })
 }
 
+export function useTopSellingEvents() {
+  return useQuery({
+    queryKey: [...eventKeys.all, 'top-selling'] as const,
+    queryFn: () => eventApi.getTopSellingEvents(),
+  })
+}
+
 export function usePastEvents() {
   return useQuery({
     queryKey: [...eventKeys.all, 'past'] as const,
