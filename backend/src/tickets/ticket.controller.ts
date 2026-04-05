@@ -2,14 +2,17 @@ import {
   Controller,
   Post,
   Get,
+  Param,
+  ParseIntPipe,
   Body,
   UseGuards,
   Req,
+  Res,
   HttpCode,
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -39,5 +42,24 @@ export class TicketController {
       throw new BadRequestException('Debes iniciar sesión para ver tus compras');
     }
     return this.ticketService.findByUser(userId);
+  }
+
+  @Get(':id/pdf')
+  async downloadPdf(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user?: { userId: number } },
+    @Res() res: Response,
+  ) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException('Debes iniciar sesión para descargar el PDF');
+    }
+    const buffer = await this.ticketService.generatePdf(id, userId);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="boletas-${id}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 }

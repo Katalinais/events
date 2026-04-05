@@ -47,6 +47,21 @@ export class TicketRepository {
     });
   }
 
+  findTicketById(id: number) {
+    return this.prisma.venta.findFirst({
+      where: { id },
+      include: {
+        detalles: {
+          include: {
+            eventoEntrada: {
+              include: { categoriaEntrada: true, evento: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
   findTicketsByUser(usuarioId: number) {
     return this.prisma.venta.findMany({
       where: { usuarioId },
