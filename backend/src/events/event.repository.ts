@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { Evento, EventoEntrada, Prisma } from '@prisma/client';
+import { EstadoEvento } from '@prisma/client';
 
 @Injectable()
 export class EventRepository {
@@ -19,7 +20,7 @@ export class EventRepository {
 
   findAllActiveWithInteresadosCount() {
     return this.prisma.evento.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, estado: EstadoEvento.ACTIVO },
       orderBy: { fecha: 'asc' },
       include: { _count: { select: { interesados: true } } },
     });
@@ -67,6 +68,7 @@ export class EventRepository {
     return this.prisma.evento.findMany({
       where: {
         deletedAt: null,
+        estado: EstadoEvento.ACTIVO,
         fecha: { gte: since },
       },
       orderBy: { fecha: 'asc' },
@@ -107,6 +109,17 @@ export class EventRepository {
   deleteManyUsuarioInteresado(usuarioId: number, eventoId: number) {
     return this.prisma.usuarioInteresado.deleteMany({
       where: { usuarioId, eventoId },
+    });
+  }
+
+  markEventsAsCompleted(before: Date): Promise<{ count: number }> {
+    return this.prisma.evento.updateMany({
+      where: {
+        deletedAt: null,
+        estado: EstadoEvento.ACTIVO,
+        fecha: { lt: before },
+      },
+      data: { estado: EstadoEvento.COMPLETADO },
     });
   }
 
