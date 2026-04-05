@@ -55,6 +55,10 @@ export class TicketService {
     return result;
   }
 
+  getTotalEarnings(): Promise<number> {
+    return this.ticketRepository.getTotalEarnings();
+  }
+
   findByUser(usuarioId: number) {
     return this.ticketRepository.findTicketsByUser(usuarioId);
   }
