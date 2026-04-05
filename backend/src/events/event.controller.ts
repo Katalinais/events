@@ -72,6 +72,12 @@ export class EventController {
     return this.eventService.findAll();
   }
 
+  @Get('admin')
+  @UseGuards(JwtAuthGuard)
+  findAllForAdmin() {
+    return this.eventService.findAllForAdmin();
+  }
+
   @Get('favorites')
   @UseGuards(JwtAuthGuard)
   findFavorites(@Req() req: Request & { user?: { userId: number } }) {

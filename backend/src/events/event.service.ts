@@ -42,6 +42,10 @@ export class EventService {
     return this.eventRepository.findAllActiveWithInteresadosCount();
   }
 
+  async findAllForAdmin() {
+    return this.eventRepository.findAllWithInteresadosCount();
+  }
+
   async findReportWithInterestedUsers() {
     return this.eventRepository.findReportWithInterestedUsers();
   }
