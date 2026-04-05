@@ -54,6 +54,71 @@ export class EventRepository {
     return eventos.filter((e): e is NonNullable<typeof e> => e !== null);
   }
 
+  async findAllEventsSalesSummary() {
+    const eventos = await this.prisma.evento.findMany({
+      where: { deletedAt: null },
+      orderBy: { fecha: 'desc' },
+      select: { id: true, nombre: true },
+    });
+
+    const summaries = await Promise.all(
+      eventos.map(async (evento) => {
+        const entradas = await this.prisma.eventoEntrada.findMany({
+          where: { eventoId: evento.id },
+          include: { detallesBoleta: { select: { cantidad: true, subtotal: true } } },
+        });
+
+        const totalEntradas = entradas.reduce(
+          (sum, e) => sum + e.detallesBoleta.reduce((s, d) => s + d.cantidad, 0),
+          0,
+        );
+        const gananciaTotal = entradas.reduce(
+          (sum, e) => sum + e.detallesBoleta.reduce((s, d) => s + d.subtotal, 0),
+          0,
+        );
+
+        return { eventoId: evento.id, eventoNombre: evento.nombre, totalEntradas, gananciaTotal };
+      }),
+    );
+
+    return summaries;
+  }
+
+  async findTicketSalesReport(eventoId: number) {
+    const evento = await this.prisma.evento.findFirst({
+      where: { id: eventoId, deletedAt: null },
+      select: { nombre: true },
+    });
+
+    if (!evento) return null;
+
+    const entradas = await this.prisma.eventoEntrada.findMany({
+      where: { eventoId },
+      include: {
+        categoriaEntrada: { select: { nombre: true } },
+        detallesBoleta: { select: { cantidad: true, subtotal: true } },
+      },
+    });
+
+    const lineas = entradas
+      .map((entrada) => {
+        const cantidadVendida = entrada.detallesBoleta.reduce((sum, d) => sum + d.cantidad, 0);
+        const ganancia = entrada.detallesBoleta.reduce((sum, d) => sum + d.subtotal, 0);
+        return {
+          categoria: entrada.categoriaEntrada.nombre,
+          precioUnitario: entrada.precio,
+          cantidadVendida,
+          ganancia,
+        };
+      })
+      .filter((l) => l.cantidadVendida > 0);
+
+    const totalEntradas = lineas.reduce((sum, l) => sum + l.cantidadVendida, 0);
+    const gananciaTotal = lineas.reduce((sum, l) => sum + l.ganancia, 0);
+
+    return { eventoNombre: evento.nombre, lineas, totalEntradas, gananciaTotal };
+  }
+
   findAllCompleted() {
     return this.prisma.evento.findMany({
       where: { deletedAt: null, estado: EstadoEvento.COMPLETADO },

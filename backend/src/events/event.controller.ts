@@ -88,6 +88,18 @@ export class EventController {
     return this.eventService.findTopSelling();
   }
 
+  @Get('sales-summary')
+  @UseGuards(JwtAuthGuard)
+  getAllEventsSalesSummary() {
+    return this.eventService.getAllEventsSalesSummary();
+  }
+
+  @Get(':id/sales-report')
+  @UseGuards(JwtAuthGuard)
+  getTicketSalesReport(@Param('id', ParseIntPipe) id: number) {
+    return this.eventService.getTicketSalesReport(id);
+  }
+
   @Get('favorites')
   @UseGuards(JwtAuthGuard)
   findFavorites(@Req() req: Request & { user?: { userId: number } }) {

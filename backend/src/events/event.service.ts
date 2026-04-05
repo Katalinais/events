@@ -159,6 +159,18 @@ export class EventService {
     return this.eventRepository.saveEntradas(eventoId, entradas);
   }
 
+  async getAllEventsSalesSummary() {
+    return this.eventRepository.findAllEventsSalesSummary();
+  }
+
+  async getTicketSalesReport(eventoId: number) {
+    const report = await this.eventRepository.findTicketSalesReport(eventoId);
+    if (!report) {
+      throw new NotFoundException(`Evento con ID ${eventoId} no encontrado`);
+    }
+    return report;
+  }
+
   async findTopSelling() {
     const cached = this.cacheService.get(TOP_SELLING_CACHE_KEY, TOP_SELLING_TTL_MS);
     if (cached) {
