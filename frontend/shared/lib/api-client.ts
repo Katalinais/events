@@ -206,6 +206,13 @@ export const eventApi = {
     return eventos.map(mapBackendToFrontend);
   },
 
+  async getPastEvents(): Promise<EventItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/past`);
+    if (!response.ok) throw new Error('Error al obtener eventos pasados');
+    const eventos: BackendEvento[] = await response.json();
+    return eventos.map(mapBackendToFrontend);
+  },
+
   async getAdminEvents(): Promise<EventItem[]> {
     const response = await fetch(`${API_BASE_URL}/events/admin`, {
       headers: { ...getAuthHeaders() },

@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarDays, Heart, LayoutDashboard, LogIn, LogOut } from "lucide-react"
+import { CalendarDays, Heart, History, LayoutDashboard, LogIn, LogOut } from "lucide-react"
 import { useAuth } from "@/shared/providers/auth-context"
 import { Button } from "@/shared/components/ui/button"
 import { usePathname } from "next/navigation"
@@ -29,6 +29,13 @@ export function PublicNavbar({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
       icon: CalendarDays,
       active: isEventsActive,
       href: pathname === "/user" && isAuthenticated && !isAdmin ? "/user?tab=events" : "/",
+    },
+    {
+      id: "past-events",
+      label: "Eventos pasados",
+      icon: History,
+      active: pathname === "/past-events",
+      href: "/past-events",
     },
   ]
 
