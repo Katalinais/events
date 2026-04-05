@@ -18,6 +18,14 @@ export class EventRepository {
     return this.prisma.evento.create({ data });
   }
 
+  findAllWithInteresadosCount() {
+    return this.prisma.evento.findMany({
+      where: { deletedAt: null },
+      orderBy: { fecha: 'asc' },
+      include: { _count: { select: { interesados: true } } },
+    });
+  }
+
   findAllActiveWithInteresadosCount() {
     return this.prisma.evento.findMany({
       where: { deletedAt: null, estado: EstadoEvento.ACTIVO },

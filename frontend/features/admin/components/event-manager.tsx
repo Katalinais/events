@@ -56,7 +56,7 @@ import {
 } from "@/shared/components/ui/tooltip"
 import { Badge } from "@/shared/components/ui/badge"
 import { useEventContext } from "@/shared/providers/event-context"
-import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/shared/hooks/use-events"
+import { useAdminEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/shared/hooks/use-events"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { useEventoEntradas, useSaveEventoEntradas } from "@/shared/hooks/use-evento-entradas"
 import { uploadEventImage, type EventItem } from "@/shared/lib/api-client"
@@ -86,7 +86,7 @@ const defaultFormData: EventFormData = {
 
 export function EventManager() {
   const { categories, getCategoryName } = useEventContext()
-  const { data: events = [] } = useEvents()
+  const { data: events = [] } = useAdminEvents()
   const { data: ticketCategories = [] } = useTicketCategories()
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()

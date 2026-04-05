@@ -8,6 +8,7 @@ export const eventKeys = {
   all: ['events'] as const,
   lists: () => [...eventKeys.all, 'list'] as const,
   list: (filters: string) => [...eventKeys.lists(), { filters }] as const,
+  adminList: () => [...eventKeys.all, 'admin-list'] as const,
   details: () => [...eventKeys.all, 'detail'] as const,
   detail: (id: string) => [...eventKeys.details(), id] as const,
   upcoming: () => [...eventKeys.all, 'upcoming'] as const,
@@ -50,6 +51,13 @@ export function useFavoriteEvents(options?: { enabled?: boolean }) {
     queryKey: eventKeys.favorites(),
     queryFn: () => eventApi.getFavoriteEvents(),
     enabled,
+  })
+}
+
+export function useAdminEvents() {
+  return useQuery({
+    queryKey: eventKeys.adminList(),
+    queryFn: () => eventApi.getAdminEvents(),
   })
 }
 
