@@ -14,6 +14,7 @@ import { useEventContext } from "@/shared/providers/event-context"
 import { useAuth } from "@/shared/providers/auth-context"
 import { useEvents, useFavoriteEvents } from "@/shared/hooks/use-events"
 import { EventCard } from "@/features/events/components/event-card"
+import { TopSellingEvents } from "@/features/events/components/top-selling-events"
 
 interface PublicEventsProps {
   onRequestLogin?: () => void
@@ -49,6 +50,8 @@ export function PublicEvents({ onRequestLogin }: PublicEventsProps) {
           Explora los mejores eventos y marca tu interes en los que mas te gusten.
         </p>
       </div>
+
+      <TopSellingEvents />
 
       <div className="flex flex-col gap-4 pb-8 sm:flex-row sm:items-center">
         <div className="relative flex-1">

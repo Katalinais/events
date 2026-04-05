@@ -206,6 +206,13 @@ export const eventApi = {
     return eventos.map(mapBackendToFrontend);
   },
 
+  async getTopSellingEvents(): Promise<(EventItem & { totalVendidas: number })[]> {
+    const response = await fetch(`${API_BASE_URL}/events/top-selling`);
+    if (!response.ok) throw new Error('Error al obtener top eventos');
+    const eventos: (BackendEvento & { totalVendidas: number })[] = await response.json();
+    return eventos.map((e) => ({ ...mapBackendToFrontend(e), totalVendidas: e.totalVendidas }));
+  },
+
   async getPastEvents(): Promise<EventItem[]> {
     const response = await fetch(`${API_BASE_URL}/events/past`);
     if (!response.ok) throw new Error('Error al obtener eventos pasados');
