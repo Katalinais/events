@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2 } from "lucide-react"
+import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+import { ticketApi } from "@/shared/lib/api-client"
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,8 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const purchase = usePurchaseTickets()
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [purchasedQR, setPurchasedQR] = useState<string | null>(null)
+  const [purchasedId, setPurchasedId] = useState<number | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const getCategoryName = (categoriaEntradaId: string) =>
     ticketCategories.find((c) => c.id === categoriaEntradaId)?.name ?? "Boleta"
@@ -61,6 +64,25 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
     if (!o) {
       setQuantities({})
       setPurchasedQR(null)
+      setPurchasedId(null)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (purchasedId == null) return
+    setIsDownloading(true)
+    try {
+      const blob = await ticketApi.downloadPdf(purchasedId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `boletas-${purchasedId}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      // error handled silently; toast shown by hook
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -78,6 +100,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
     const result = await purchase.mutateAsync(items).catch(() => null)
     if (result) {
       setPurchasedQR(result.codigoQR)
+      setPurchasedId(result.id)
     }
   }
 
@@ -102,7 +125,15 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
             <div className="rounded-lg border border-border bg-muted px-4 py-3">
               <p className="break-all font-mono text-xs text-foreground">{purchasedQR}</p>
             </div>
-            <Button className="w-full" onClick={() => handleClose(false)}>
+            <Button
+              className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={isDownloading}
+              onClick={handleDownloadPdf}
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => handleClose(false)}>
               Cerrar
             </Button>
           </div>

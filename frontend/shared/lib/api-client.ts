@@ -470,6 +470,17 @@ export const ticketApi = {
     }
     return response.json();
   },
+
+  async downloadPdf(ticketId: number): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/pdf`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al descargar el PDF');
+    }
+    return response.blob();
+  },
 };
 
 export interface AuthUser {

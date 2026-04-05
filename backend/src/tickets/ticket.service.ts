@@ -1,6 +1,7 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
+import { generateTicketPdf } from '../utils/pdf.util';
 
 @Injectable()
 export class TicketService {
@@ -49,5 +50,30 @@ export class TicketService {
 
   findByUser(usuarioId: number) {
     return this.ticketRepository.findTicketsByUser(usuarioId);
+  }
+
+  async generatePdf(ticketId: number, usuarioId: number): Promise<Buffer> {
+    const venta = await this.ticketRepository.findTicketById(ticketId);
+
+    if (!venta) {
+      throw new NotFoundException(`Compra con ID ${ticketId} no encontrada`);
+    }
+
+    if (venta.usuarioId !== usuarioId) {
+      throw new NotFoundException(`Compra con ID ${ticketId} no encontrada`);
+    }
+
+    return generateTicketPdf({
+      codigoQR: venta.codigoQR,
+      fechaVenta: venta.fechaVenta,
+      total: venta.total,
+      detalles: venta.detalles.map((d) => ({
+        categoryName: d.eventoEntrada.categoriaEntrada.nombre,
+        eventName: d.eventoEntrada.evento.nombre,
+        cantidad: d.cantidad,
+        precioUnitario: d.precioUnitario,
+        subtotal: d.subtotal,
+      })),
+    });
   }
 }
