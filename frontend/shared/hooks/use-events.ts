@@ -54,6 +54,21 @@ export function useFavoriteEvents(options?: { enabled?: boolean }) {
   })
 }
 
+export function useAllEventsSalesSummary() {
+  return useQuery({
+    queryKey: [...eventKeys.all, 'sales-summary'] as const,
+    queryFn: () => eventApi.getAllEventsSalesSummary(),
+  })
+}
+
+export function useEventSalesReport(eventId: string | null) {
+  return useQuery({
+    queryKey: [...eventKeys.all, 'sales-report', eventId] as const,
+    queryFn: () => eventApi.getEventSalesReport(eventId!),
+    enabled: !!eventId,
+  })
+}
+
 export function useTopSellingEvents() {
   return useQuery({
     queryKey: [...eventKeys.all, 'top-selling'] as const,
