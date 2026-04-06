@@ -240,6 +240,15 @@ export class EventRepository {
     });
   }
 
+  findEventoEntradaByEventoAndCategoria(
+    eventoId: number,
+    categoriaEntradaId: number,
+  ): Promise<EventoEntrada | null> {
+    return this.prisma.eventoEntrada.findFirst({
+      where: { eventoId, categoriaEntradaId },
+    });
+  }
+
   findEntradasByEventoId(eventoId: number): Promise<EventoEntrada[]> {
     return this.prisma.eventoEntrada.findMany({
       where: { eventoId },
