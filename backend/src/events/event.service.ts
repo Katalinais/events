@@ -154,6 +154,19 @@ export class EventService {
           `Categoría de boleta con ID ${entrada.categoriaEntradaId} no encontrada`,
         );
       }
+
+      const existing = await this.eventRepository.findEventoEntradaByEventoAndCategoria(
+        eventoId,
+        entrada.categoriaEntradaId,
+      );
+      if (existing) {
+        const vendidas = existing.cantidadTotal - existing.cantidadDisponible;
+        if (entrada.cantidadTotal < vendidas) {
+          throw new BadRequestException(
+            `No puedes establecer ${entrada.cantidadTotal} boletas para "${cat.nombre}" porque ya se han vendido ${vendidas}`,
+          );
+        }
+      }
     }
 
     return this.eventRepository.saveEntradas(eventoId, entradas);

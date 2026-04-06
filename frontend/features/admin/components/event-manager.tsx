@@ -105,6 +105,10 @@ export function EventManager() {
 
   const { data: existingEntradas = [] } = useEventoEntradas(editingEvent?.id ?? null)
 
+  const vendidasMap = Object.fromEntries(
+    existingEntradas.map((e) => [e.categoriaEntradaId, e.cantidadTotal - e.cantidadDisponible]),
+  )
+
   useEffect(() => {
     if (existingEntradas.length > 0) {
       setEntradas(
@@ -423,8 +427,11 @@ export function EventManager() {
           <p className="text-xs text-muted-foreground">No se han agregado boletas.</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {entradas.map((entrada, index) => (
-              <div key={index} className="grid grid-cols-[1fr_80px_90px_32px] items-center gap-2">
+            {entradas.map((entrada, index) => {
+              const vendidas = vendidasMap[entrada.categoriaEntradaId] ?? 0
+              const minCantidad = Math.max(1, vendidas)
+              return (
+              <div key={index} className="grid grid-cols-[1fr_80px_90px_32px] items-start gap-2">
                 <Select
                   value={entrada.categoriaEntradaId || "none"}
                   onValueChange={(v) =>
@@ -445,18 +452,23 @@ export function EventManager() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  type="number"
-                  min="1"
-                  placeholder="Cant."
-                  className="h-8 text-xs"
-                  value={entrada.cantidadTotal}
-                  onChange={(e) =>
-                    setEntradas((prev) =>
-                      prev.map((row, i) => (i === index ? { ...row, cantidadTotal: e.target.value } : row)),
-                    )
-                  }
-                />
+                <div className="flex flex-col gap-0.5">
+                  <Input
+                    type="number"
+                    min={minCantidad}
+                    placeholder="Cant."
+                    className="h-8 text-xs"
+                    value={entrada.cantidadTotal}
+                    onChange={(e) =>
+                      setEntradas((prev) =>
+                        prev.map((row, i) => (i === index ? { ...row, cantidadTotal: e.target.value } : row)),
+                      )
+                    }
+                  />
+                  {editingEvent && vendidas > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{vendidas} vendidas</span>
+                  )}
+                </div>
                 <Input
                   type="number"
                   min="0"
@@ -480,7 +492,8 @@ export function EventManager() {
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            ))}
+              )
+            })}
             <p className="text-xs text-muted-foreground">Categoría · Cantidad · Precio (COP)</p>
           </div>
         )}
