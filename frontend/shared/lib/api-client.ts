@@ -21,6 +21,7 @@ export interface BackendEvento {
   urlImagen: string | null;
   fecha: string;
   categoriaId: number | null;
+  estado?: string;
   createdAt: string;
   updatedAt: string;
   _count?: { interesados: number };
@@ -53,6 +54,7 @@ export interface EventItem {
   imageUrl: string;
   price: number;
   interested: number;
+  status?: string;
 }
 
 export function mapBackendToFrontend(evento: BackendEvento): EventItem {
@@ -70,6 +72,7 @@ export function mapBackendToFrontend(evento: BackendEvento): EventItem {
     imageUrl,
     price: evento.precio,
     interested: evento._count?.interesados ?? 0,
+    status: evento.estado,
   };
 }
 

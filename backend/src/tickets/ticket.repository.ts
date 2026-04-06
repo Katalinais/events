@@ -6,8 +6,11 @@ import type { EventoEntrada, Venta } from '@prisma/client';
 export class TicketRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findEventoEntradaById(id: number): Promise<EventoEntrada | null> {
-    return this.prisma.eventoEntrada.findFirst({ where: { id } });
+  findEventoEntradaById(id: number) {
+    return this.prisma.eventoEntrada.findFirst({
+      where: { id },
+      include: { evento: { select: { estado: true } } },
+    });
   }
 
   decrementDisponible(eventoEntradaId: number, cantidad: number): Promise<EventoEntrada> {
