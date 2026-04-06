@@ -163,15 +163,21 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
         )}
 
         <div className="mt-auto flex shrink-0 items-center justify-between border-t border-border/60 pt-3">
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setIsPurchaseOpen(true)}
-            className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Comprar
-          </Button>
+          {event.status === "COMPLETADO" ? (
+            <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              Evento finalizado
+            </span>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setIsPurchaseOpen(true)}
+              className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Comprar
+            </Button>
+          )}
 
           <Button
             type="button"

@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { EstadoEvento } from '@prisma/client';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
 import { generateTicketPdf } from '../utils/pdf.util';
@@ -26,6 +27,12 @@ export class TicketService {
       if (!entrada) {
         throw new BadRequestException(
           `Entrada con ID ${item.eventoEntradaId} no encontrada`,
+        );
+      }
+
+      if (entrada.evento.estado !== EstadoEvento.ACTIVO) {
+        throw new BadRequestException(
+          'No se pueden comprar boletas para un evento que ya ha finalizado',
         );
       }
 
