@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download } from "lucide-react"
+import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download, CreditCard, Lock, ChevronLeft } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
-import { ticketApi } from "@/shared/lib/api-client"
+import { Input } from "@/shared/components/ui/input"
+import { Label } from "@/shared/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,16 @@ import { useEventoEntradas } from "@/shared/hooks/use-evento-entradas"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { usePurchaseTickets } from "@/shared/hooks/use-tickets"
 import { useAuth } from "@/shared/providers/auth-context"
+import { ticketApi } from "@/shared/lib/api-client"
+
+type Step = "selection" | "billing" | "success"
+
+interface BillingForm {
+  name: string
+  cardNumber: string
+  expiry: string
+  cvv: string
+}
 
 interface PurchaseDialogProps {
   open: boolean
@@ -26,12 +37,26 @@ interface PurchaseDialogProps {
   onRequestLogin?: () => void
 }
 
+function formatCardNumber(value: string) {
+  return value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim()
+}
+
+function formatExpiry(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 4)
+  if (digits.length >= 3) return digits.slice(0, 2) + "/" + digits.slice(2)
+  return digits
+}
+
 export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onRequestLogin }: PurchaseDialogProps) {
   const { isAuthenticated } = useAuth()
   const { data: entradas = [], isLoading } = useEventoEntradas(open ? eventId : null)
   const { data: ticketCategories = [] } = useTicketCategories()
   const purchase = usePurchaseTickets()
+
+  const [step, setStep] = useState<Step>("selection")
   const [quantities, setQuantities] = useState<Record<string, number>>({})
+  const [billing, setBilling] = useState<BillingForm>({ name: "", cardNumber: "", expiry: "", cvv: "" })
+  const [billingErrors, setBillingErrors] = useState<Partial<BillingForm>>({})
   const [purchasedQR, setPurchasedQR] = useState<string | null>(null)
   const [purchasedId, setPurchasedId] = useState<number | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -54,17 +79,52 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
 
   const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0)
 
-  const formattedTotal = new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "COP",
-  }).format(total)
+  const formattedTotal = new Intl.NumberFormat("es-ES", { style: "currency", currency: "COP" }).format(total)
 
   const handleClose = (o: boolean) => {
     onOpenChange(o)
     if (!o) {
+      setStep("selection")
       setQuantities({})
+      setBilling({ name: "", cardNumber: "", expiry: "", cvv: "" })
+      setBillingErrors({})
       setPurchasedQR(null)
       setPurchasedId(null)
+    }
+  }
+
+  const handleGoToBilling = () => {
+    if (!isAuthenticated) {
+      onOpenChange(false)
+      onRequestLogin?.()
+      return
+    }
+    setStep("billing")
+  }
+
+  const validateBilling = (): boolean => {
+    const errors: Partial<BillingForm> = {}
+    if (!billing.name.trim()) errors.name = "Requerido"
+    const digits = billing.cardNumber.replace(/\s/g, "")
+    if (digits.length !== 16) errors.cardNumber = "16 dígitos requeridos"
+    if (!/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = "Formato MM/AA"
+    if (billing.cvv.length < 3) errors.cvv = "Requerido"
+    setBillingErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handlePurchase = async () => {
+    if (!validateBilling()) return
+
+    const items = entradas
+      .filter((e) => (quantities[e.id] ?? 0) > 0)
+      .map((e) => ({ eventoEntradaId: Number(e.id), cantidad: quantities[e.id] }))
+
+    const result = await purchase.mutateAsync(items).catch(() => null)
+    if (result) {
+      setPurchasedQR(result.codigoQR)
+      setPurchasedId(result.id)
+      setStep("success")
     }
   }
 
@@ -79,29 +139,15 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
       a.download = `boletas-${purchasedId}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch {
-      // error handled silently; toast shown by hook
     } finally {
       setIsDownloading(false)
     }
   }
 
-  const handlePurchase = async () => {
-    if (!isAuthenticated) {
-      onOpenChange(false)
-      onRequestLogin?.()
-      return
-    }
-
-    const items = entradas
-      .filter((e) => (quantities[e.id] ?? 0) > 0)
-      .map((e) => ({ eventoEntradaId: Number(e.id), cantidad: quantities[e.id] }))
-
-    const result = await purchase.mutateAsync(items).catch(() => null)
-    if (result) {
-      setPurchasedQR(result.codigoQR)
-      setPurchasedId(result.id)
-    }
+  const stepTitles: Record<Step, string> = {
+    selection: "Comprar boletas",
+    billing: "Datos de pago",
+    success: "¡Compra exitosa!",
   }
 
   return (
@@ -109,35 +155,23 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-primary" />
-            Comprar boletas
+            {step === "billing" && (
+              <button onClick={() => setStep("selection")} className="mr-1 text-muted-foreground hover:text-foreground">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            {step === "selection" && <Ticket className="h-5 w-5 text-primary" />}
+            {step === "billing" && <CreditCard className="h-5 w-5 text-primary" />}
+            {step === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+            {stepTitles[step]}
           </DialogTitle>
-          <DialogDescription className="line-clamp-1">{eventName}</DialogDescription>
+          {step !== "success" && (
+            <DialogDescription className="line-clamp-1">{eventName}</DialogDescription>
+          )}
         </DialogHeader>
 
-        {purchasedQR ? (
-          <div className="flex flex-col items-center gap-4 py-4 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
-            <div>
-              <p className="text-base font-semibold text-foreground">¡Compra exitosa!</p>
-              <p className="mt-1 text-sm text-muted-foreground">Guarda tu código QR</p>
-            </div>
-            <div className="rounded-lg border border-border bg-muted px-4 py-3">
-              <p className="break-all font-mono text-xs text-foreground">{purchasedQR}</p>
-            </div>
-            <Button
-              className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={isDownloading}
-              onClick={handleDownloadPdf}
-            >
-              <Download className="h-4 w-4" />
-              {isDownloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => handleClose(false)}>
-              Cerrar
-            </Button>
-          </div>
-        ) : (
+        {/* ── Step 1: Selección ── */}
+        {step === "selection" && (
           <>
             <div className="flex flex-col gap-3 py-2">
               {isLoading ? (
@@ -152,43 +186,19 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
                 entradas.map((entrada) => {
                   const qty = quantities[entrada.id] ?? 0
                   const disponible = entrada.cantidadDisponible
-                  const precio = new Intl.NumberFormat("es-ES", {
-                    style: "currency",
-                    currency: "COP",
-                  }).format(entrada.precio)
-
+                  const precio = new Intl.NumberFormat("es-ES", { style: "currency", currency: "COP" }).format(entrada.precio)
                   return (
-                    <div
-                      key={entrada.id}
-                      className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3"
-                    >
+                    <div key={entrada.id} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium">
-                          {getCategoryName(entrada.categoriaEntradaId)}
-                        </span>
+                        <span className="text-sm font-medium">{getCategoryName(entrada.categoriaEntradaId)}</span>
                         <span className="text-xs text-muted-foreground">{precio} · {disponible} disponibles</span>
                       </div>
-
                       <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          disabled={qty === 0}
-                          onClick={() => updateQuantity(entrada.id, -1, disponible)}
-                        >
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty === 0} onClick={() => updateQuantity(entrada.id, -1, disponible)}>
                           <Minus className="h-3.5 w-3.5" />
                         </Button>
                         <span className="w-5 text-center text-sm tabular-nums">{qty}</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          disabled={qty >= disponible}
-                          onClick={() => updateQuantity(entrada.id, 1, disponible)}
-                        >
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty >= disponible} onClick={() => updateQuantity(entrada.id, 1, disponible)}>
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -202,28 +212,122 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
               <>
                 <Separator />
                 <div className="flex items-center justify-between px-1 text-sm">
-                  <span className="text-muted-foreground">
-                    {totalItems} {totalItems === 1 ? "boleta" : "boletas"}
-                  </span>
+                  <span className="text-muted-foreground">{totalItems} {totalItems === 1 ? "boleta" : "boletas"}</span>
                   <span className="font-semibold text-foreground">{formattedTotal}</span>
                 </div>
               </>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => handleClose(false)}>
-                Cancelar
-              </Button>
+              <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
               <Button
                 className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={totalItems === 0 || purchase.isPending}
-                onClick={handlePurchase}
+                disabled={totalItems === 0}
+                onClick={handleGoToBilling}
               >
                 <ShoppingCart className="h-4 w-4" />
-                {purchase.isPending ? "Procesando..." : "Comprar"}
+                Comprar
               </Button>
             </DialogFooter>
           </>
+        )}
+
+        {/* ── Step 2: Facturación simulada ── */}
+        {step === "billing" && (
+          <>
+            <div className="flex flex-col gap-4 py-2">
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                <Lock className="h-3.5 w-3.5 shrink-0" />
+                Simulación de pago — ningún dato es procesado ni almacenado
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Nombre en la tarjeta</Label>
+                <Input
+                  placeholder="Juan Pérez"
+                  value={billing.name}
+                  onChange={(e) => setBilling((b) => ({ ...b, name: e.target.value }))}
+                  className={billingErrors.name ? "border-destructive" : ""}
+                />
+                {billingErrors.name && <p className="text-xs text-destructive">{billingErrors.name}</p>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Número de tarjeta</Label>
+                <Input
+                  placeholder="1234 5678 9012 3456"
+                  value={billing.cardNumber}
+                  onChange={(e) => setBilling((b) => ({ ...b, cardNumber: formatCardNumber(e.target.value) }))}
+                  className={billingErrors.cardNumber ? "border-destructive" : ""}
+                />
+                {billingErrors.cardNumber && <p className="text-xs text-destructive">{billingErrors.cardNumber}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">Vencimiento</Label>
+                  <Input
+                    placeholder="MM/AA"
+                    value={billing.expiry}
+                    onChange={(e) => setBilling((b) => ({ ...b, expiry: formatExpiry(e.target.value) }))}
+                    className={billingErrors.expiry ? "border-destructive" : ""}
+                  />
+                  {billingErrors.expiry && <p className="text-xs text-destructive">{billingErrors.expiry}</p>}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">CVV</Label>
+                  <Input
+                    placeholder="123"
+                    maxLength={4}
+                    value={billing.cvv}
+                    onChange={(e) => setBilling((b) => ({ ...b, cvv: e.target.value.replace(/\D/g, "") }))}
+                    className={billingErrors.cvv ? "border-destructive" : ""}
+                  />
+                  {billingErrors.cvv && <p className="text-xs text-destructive">{billingErrors.cvv}</p>}
+                </div>
+              </div>
+
+              <Separator />
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total a pagar</span>
+                <span className="font-bold text-foreground">{formattedTotal}</span>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStep("selection")}>Volver</Button>
+              <Button
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={purchase.isPending}
+                onClick={handlePurchase}
+              >
+                <CreditCard className="h-4 w-4" />
+                {purchase.isPending ? "Procesando..." : "Pagar"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {/* ── Step 3: Éxito ── */}
+        {step === "success" && (
+          <div className="flex flex-col items-center gap-4 py-4 text-center">
+            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <div>
+              <p className="text-base font-semibold text-foreground">¡Pago completado!</p>
+              <p className="mt-1 text-sm text-muted-foreground">Tus boletas han sido generadas</p>
+            </div>
+            <Button
+              className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={isDownloading}
+              onClick={handleDownloadPdf}
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => handleClose(false)}>
+              Cerrar
+            </Button>
+          </div>
         )}
       </DialogContent>
     </Dialog>
