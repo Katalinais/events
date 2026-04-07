@@ -72,7 +72,7 @@ function HomeContent() {
                   alt="Event Management"
                   width={36}
                   height={36}
-                  className="h-9 w-9 rounded-lg"
+                  className="h-9 w-9 rounded-lg ring-1 ring-border"
                   priority
                 />
                 <span
