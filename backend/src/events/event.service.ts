@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
-import { CreateEventoDto } from './dto/create-evento.dto';
-import { UpdateEventoDto } from './dto/update-evento.dto';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { TicketEntryItemDto } from './dto/save-ticket-entries.dto';
 import { EventRepository } from './event.repository';
 import { CacheService } from '../shared/cache.service';
@@ -22,26 +22,26 @@ export class EventService {
     private readonly cacheService: CacheService,
   ) {}
 
-  private async ensureCategoryExists(categoriaId: number | null | undefined) {
-    if (categoriaId == null) return;
-    const cat = await this.categoryRepository.findFirstActiveById(categoriaId);
+  private async ensureCategoryExists(categoryId: number | null | undefined) {
+    if (categoryId == null) return;
+    const cat = await this.categoryRepository.findFirstActiveById(categoryId);
     if (!cat) {
-      throw new BadRequestException(`Categoría con ID ${categoriaId} no encontrada`);
+      throw new BadRequestException(`Category with ID ${categoryId} not found`);
     }
   }
 
-  async create(createEventoDto: CreateEventoDto) {
-    await this.ensureCategoryExists(createEventoDto.categoriaId);
-    const fecha = createEventoDto.fecha?.trim()
-      ? new Date(createEventoDto.fecha)
+  async create(createEventDto: CreateEventDto) {
+    await this.ensureCategoryExists(createEventDto.categoryId);
+    const date = createEventDto.date?.trim()
+      ? new Date(createEventDto.date)
       : new Date();
     return this.eventRepository.create({
-      nombre: createEventoDto.nombre,
-      descripcion: createEventoDto.descripcion,
-      precio: createEventoDto.precio ?? 0,
-      urlImagen: createEventoDto.urlImagen ?? null,
-      fecha,
-      categoriaId: createEventoDto.categoriaId ?? null,
+      nombre: createEventDto.name,
+      descripcion: createEventDto.description,
+      precio: createEventDto.price ?? 0,
+      urlImagen: createEventDto.imageUrl ?? null,
+      fecha: date,
+      categoriaId: createEventDto.categoryId ?? null,
     });
   }
 
@@ -62,38 +62,38 @@ export class EventService {
   }
 
   async findOne(id: number) {
-    const evento = await this.eventRepository.findFirstActiveByIdWithInteresadosCount(id);
+    const event = await this.eventRepository.findFirstActiveByIdWithInteresadosCount(id);
 
-    if (!evento) {
-      throw new NotFoundException(`Evento con ID ${id} no encontrado`);
+    if (!event) {
+      throw new NotFoundException(`Event with ID ${id} not found`);
     }
 
-    return evento;
+    return event;
   }
 
-  async update(id: number, updateEventoDto: UpdateEventoDto) {
+  async update(id: number, updateEventDto: UpdateEventDto) {
     await this.findOne(id);
-    await this.ensureCategoryExists(updateEventoDto.categoriaId);
+    await this.ensureCategoryExists(updateEventDto.categoryId);
 
     const data: Prisma.EventoUncheckedUpdateInput = {};
 
-    if (updateEventoDto.nombre !== undefined) {
-      data.nombre = updateEventoDto.nombre;
+    if (updateEventDto.name !== undefined) {
+      data.nombre = updateEventDto.name;
     }
-    if (updateEventoDto.descripcion !== undefined) {
-      data.descripcion = updateEventoDto.descripcion;
+    if (updateEventDto.description !== undefined) {
+      data.descripcion = updateEventDto.description;
     }
-    if (updateEventoDto.precio !== undefined) {
-      data.precio = updateEventoDto.precio;
+    if (updateEventDto.price !== undefined) {
+      data.precio = updateEventDto.price;
     }
-    if (updateEventoDto.urlImagen !== undefined) {
-      data.urlImagen = updateEventoDto.urlImagen;
+    if (updateEventDto.imageUrl !== undefined) {
+      data.urlImagen = updateEventDto.imageUrl;
     }
-    if (updateEventoDto.fecha !== undefined) {
-      data.fecha = new Date(updateEventoDto.fecha);
+    if (updateEventDto.date !== undefined) {
+      data.fecha = new Date(updateEventDto.date);
     }
-    if (updateEventoDto.categoriaId !== undefined) {
-      data.categoriaId = updateEventoDto.categoriaId;
+    if (updateEventDto.categoryId !== undefined) {
+      data.categoriaId = updateEventDto.categoryId;
     }
 
     return this.eventRepository.update(id, data);
@@ -111,75 +111,75 @@ export class EventService {
     return this.eventRepository.findUpcomingActive(now, limit);
   }
 
-  async findFavoritesByUser(usuarioId: number) {
-    const favoritos = await this.eventRepository.findUsuarioInteresadosForUserFavorites(usuarioId);
+  async findFavoritesByUser(userId: number) {
+    const favorites = await this.eventRepository.findUsuarioInteresadosForUserFavorites(userId);
 
-    return favoritos
+    return favorites
       .map((fav) => fav.evento)
-      .filter((evento): evento is NonNullable<typeof evento> => evento != null);
+      .filter((event): event is NonNullable<typeof event> => event != null);
   }
 
-  async markInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {
-    if (!usuarioId) {
-      throw new BadRequestException('Usuario no identificado');
+  async markInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
+    if (!userId) {
+      throw new BadRequestException('User not identified');
     }
-    await this.findOne(eventoId);
+    await this.findOne(eventId);
 
     try {
-      await this.eventRepository.createUsuarioInteresado(usuarioId, eventoId);
+      await this.eventRepository.createUsuarioInteresado(userId, eventId);
     } catch (e: unknown) {
       const isUniqueViolation =
         e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002';
       if (!isUniqueViolation) throw e;
     }
 
-    const total = await this.eventRepository.countInteresadosByEventoId(eventoId);
+    const total = await this.eventRepository.countInteresadosByEventoId(eventId);
     return { interesados: total };
   }
 
-  async findEntradas(eventoId: number) {
-    await this.findOne(eventoId);
-    return this.eventRepository.findEntradasByEventoId(eventoId);
+  async findTicketEntries(eventId: number) {
+    await this.findOne(eventId);
+    return this.eventRepository.findTicketEntriesByEventId(eventId);
   }
 
-  async saveEntradas(eventoId: number, entradas: TicketEntryItemDto[]) {
-    await this.findOne(eventoId);
+  async saveTicketEntries(eventId: number, entries: TicketEntryItemDto[]) {
+    await this.findOne(eventId);
 
-    for (const entrada of entradas) {
+    for (const entry of entries) {
       const cat = await this.ticketCategoryRepository.findFirstActiveById(
-        entrada.categoriaEntradaId,
+        entry.ticketCategoryId,
       );
       if (!cat) {
         throw new BadRequestException(
-          `Categoría de boleta con ID ${entrada.categoriaEntradaId} no encontrada`,
+          `Ticket category with ID ${entry.ticketCategoryId} not found`,
         );
       }
 
-      const existing = await this.eventRepository.findEventoEntradaByEventoAndCategoria(
-        eventoId,
-        entrada.categoriaEntradaId,
+      const existing = await this.eventRepository.findTicketEntryByEventAndCategory(
+        eventId,
+        entry.ticketCategoryId,
       );
       if (existing) {
-        const vendidas = existing.cantidadTotal - existing.cantidadDisponible;
-        if (entrada.cantidadTotal < vendidas) {
+        const soldCount = existing.cantidadTotal - existing.cantidadDisponible;
+        if (entry.totalQuantity < soldCount) {
           throw new BadRequestException(
-            `No puedes establecer ${entrada.cantidadTotal} boletas para "${cat.nombre}" porque ya se han vendido ${vendidas}`,
+            `Cannot set ${entry.totalQuantity} tickets for "${cat.nombre}" as ${soldCount} have already been sold`,
           );
         }
       }
     }
 
-    return this.eventRepository.saveEntradas(eventoId, entradas);
+    return this.eventRepository.saveTicketEntries(eventId, entries);
   }
 
   async getAllEventsSalesSummary() {
     return this.eventRepository.findAllEventsSalesSummary();
   }
 
-  async getTicketSalesReport(eventoId: number) {
-    const report = await this.eventRepository.findTicketSalesReport(eventoId);
+  async getTicketSalesReport(eventId: number) {
+    const report = await this.eventRepository.findTicketSalesReport(eventId);
     if (!report) {
-      throw new NotFoundException(`Evento con ID ${eventoId} no encontrado`);
+      throw new NotFoundException(`Event with ID ${eventId} not found`);
     }
     return report;
   }
@@ -187,25 +187,25 @@ export class EventService {
   async findTopSelling() {
     const cached = this.cacheService.get(TOP_SELLING_CACHE_KEY, TOP_SELLING_TTL_MS);
     if (cached) {
-      this.logger.debug('Top selling desde caché');
+      this.logger.debug('Top selling from cache');
       return cached;
     }
 
-    this.logger.log('Repoblando caché de top selling desde DB');
+    this.logger.log('Repopulating top selling cache from DB');
     const result = await this.eventRepository.findTopSelling(3);
     this.cacheService.set(TOP_SELLING_CACHE_KEY, result);
     return result;
   }
 
-  async unmarkInterested(eventoId: number, usuarioId: number): Promise<{ interesados: number }> {
-    if (!usuarioId) {
-      throw new BadRequestException('Usuario no identificado');
+  async unmarkInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
+    if (!userId) {
+      throw new BadRequestException('User not identified');
     }
-    await this.findOne(eventoId);
+    await this.findOne(eventId);
 
-    await this.eventRepository.deleteManyUsuarioInteresado(usuarioId, eventoId);
+    await this.eventRepository.deleteManyUsuarioInteresado(userId, eventId);
 
-    const total = await this.eventRepository.countInteresadosByEventoId(eventoId);
+    const total = await this.eventRepository.countInteresadosByEventoId(eventId);
     return { interesados: total };
   }
 }

@@ -26,97 +26,97 @@ export class EventRepository {
     });
 
     // Resolve eventoId for each eventoEntradaId and aggregate by event
-    const eventoTotals = new Map<number, number>();
+    const eventTotals = new Map<number, number>();
     for (const r of results) {
-      const entrada = await this.prisma.eventoEntrada.findFirst({
+      const entry = await this.prisma.eventoEntrada.findFirst({
         where: { id: r.eventoEntradaId },
         select: { eventoId: true },
       });
-      if (!entrada) continue;
-      const prev = eventoTotals.get(entrada.eventoId) ?? 0;
-      eventoTotals.set(entrada.eventoId, prev + (r._sum.cantidad ?? 0));
+      if (!entry) continue;
+      const prev = eventTotals.get(entry.eventoId) ?? 0;
+      eventTotals.set(entry.eventoId, prev + (r._sum.cantidad ?? 0));
     }
 
-    const sorted = [...eventoTotals.entries()]
+    const sorted = [...eventTotals.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit);
 
-    const eventos = await Promise.all(
-      sorted.map(async ([eventoId, totalVendidas]) => {
-        const evento = await this.prisma.evento.findFirst({
-          where: { id: eventoId, deletedAt: null, estado: EstadoEvento.ACTIVO },
+    const events = await Promise.all(
+      sorted.map(async ([eventId, totalSold]) => {
+        const event = await this.prisma.evento.findFirst({
+          where: { id: eventId, deletedAt: null, estado: EstadoEvento.ACTIVO },
           include: { _count: { select: { interesados: true } } },
         });
-        return evento ? { ...evento, totalVendidas } : null;
+        return event ? { ...event, totalSold } : null;
       }),
     );
 
-    return eventos.filter((e): e is NonNullable<typeof e> => e !== null);
+    return events.filter((e): e is NonNullable<typeof e> => e !== null);
   }
 
   async findAllEventsSalesSummary() {
-    const eventos = await this.prisma.evento.findMany({
+    const events = await this.prisma.evento.findMany({
       where: { deletedAt: null },
       orderBy: { fecha: 'desc' },
       select: { id: true, nombre: true },
     });
 
     const summaries = await Promise.all(
-      eventos.map(async (evento) => {
-        const entradas = await this.prisma.eventoEntrada.findMany({
-          where: { eventoId: evento.id },
+      events.map(async (event) => {
+        const entries = await this.prisma.eventoEntrada.findMany({
+          where: { eventoId: event.id },
           include: { detallesBoleta: { select: { cantidad: true, subtotal: true } } },
         });
 
-        const totalEntradas = entradas.reduce(
+        const totalTickets = entries.reduce(
           (sum, e) => sum + e.detallesBoleta.reduce((s, d) => s + d.cantidad, 0),
           0,
         );
-        const gananciaTotal = entradas.reduce(
+        const totalRevenue = entries.reduce(
           (sum, e) => sum + e.detallesBoleta.reduce((s, d) => s + d.subtotal, 0),
           0,
         );
 
-        return { eventoId: evento.id, eventoNombre: evento.nombre, totalEntradas, gananciaTotal };
+        return { eventId: event.id, eventName: event.nombre, totalTickets, totalRevenue };
       }),
     );
 
     return summaries;
   }
 
-  async findTicketSalesReport(eventoId: number) {
-    const evento = await this.prisma.evento.findFirst({
-      where: { id: eventoId, deletedAt: null },
+  async findTicketSalesReport(eventId: number) {
+    const event = await this.prisma.evento.findFirst({
+      where: { id: eventId, deletedAt: null },
       select: { nombre: true },
     });
 
-    if (!evento) return null;
+    if (!event) return null;
 
-    const entradas = await this.prisma.eventoEntrada.findMany({
-      where: { eventoId },
+    const entries = await this.prisma.eventoEntrada.findMany({
+      where: { eventoId: eventId },
       include: {
         categoriaEntrada: { select: { nombre: true } },
         detallesBoleta: { select: { cantidad: true, subtotal: true } },
       },
     });
 
-    const lineas = entradas
-      .map((entrada) => {
-        const cantidadVendida = entrada.detallesBoleta.reduce((sum, d) => sum + d.cantidad, 0);
-        const ganancia = entrada.detallesBoleta.reduce((sum, d) => sum + d.subtotal, 0);
+    const lines = entries
+      .map((entry) => {
+        const soldCount = entry.detallesBoleta.reduce((sum, d) => sum + d.cantidad, 0);
+        const revenue = entry.detallesBoleta.reduce((sum, d) => sum + d.subtotal, 0);
         return {
-          categoria: entrada.categoriaEntrada.nombre,
-          precioUnitario: entrada.precio,
-          cantidadVendida,
-          ganancia,
+          category: entry.categoriaEntrada.nombre,
+          unitPrice: entry.precio,
+          soldCount,
+          revenue,
         };
       })
-      .filter((l) => l.cantidadVendida > 0);
+      .filter((l) => l.soldCount > 0);
 
-    const totalEntradas = lineas.reduce((sum, l) => sum + l.cantidadVendida, 0);
-    const gananciaTotal = lineas.reduce((sum, l) => sum + l.ganancia, 0);
+    const totalTickets = lines.reduce((sum, l) => sum + l.soldCount, 0);
+    const totalRevenue = lines.reduce((sum, l) => sum + l.revenue, 0);
 
-    return { eventoNombre: evento.nombre, lineas, totalEntradas, gananciaTotal };
+    return { eventName: event.nombre, lines, totalTickets, totalRevenue };
   }
 
   findAllCompleted() {
@@ -240,59 +240,59 @@ export class EventRepository {
     });
   }
 
-  findEventoEntradaByEventoAndCategoria(
-    eventoId: number,
-    categoriaEntradaId: number,
+  findTicketEntryByEventAndCategory(
+    eventId: number,
+    ticketCategoryId: number,
   ): Promise<EventoEntrada | null> {
     return this.prisma.eventoEntrada.findFirst({
-      where: { eventoId, categoriaEntradaId },
+      where: { eventoId: eventId, categoriaEntradaId: ticketCategoryId },
     });
   }
 
-  findEntradasByEventoId(eventoId: number): Promise<EventoEntrada[]> {
+  findTicketEntriesByEventId(eventId: number): Promise<EventoEntrada[]> {
     return this.prisma.eventoEntrada.findMany({
-      where: { eventoId },
+      where: { eventoId: eventId },
       orderBy: { categoriaEntradaId: 'asc' },
     });
   }
 
-  async saveEntradas(
-    eventoId: number,
-    entradas: { categoriaEntradaId: number; cantidadTotal: number; precio: number }[],
+  async saveTicketEntries(
+    eventId: number,
+    entries: { ticketCategoryId: number; totalQuantity: number; price: number }[],
   ): Promise<EventoEntrada[]> {
-    const incomingIds = entradas.map((e) => e.categoriaEntradaId);
+    const incomingIds = entries.map((e) => e.ticketCategoryId);
 
     await this.prisma.eventoEntrada.deleteMany({
-      where: { eventoId, categoriaEntradaId: { notIn: incomingIds } },
+      where: { eventoId: eventId, categoriaEntradaId: { notIn: incomingIds } },
     });
 
     const results: EventoEntrada[] = [];
 
-    for (const entrada of entradas) {
+    for (const entry of entries) {
       const existing = await this.prisma.eventoEntrada.findFirst({
-        where: { eventoId, categoriaEntradaId: entrada.categoriaEntradaId },
+        where: { eventoId: eventId, categoriaEntradaId: entry.ticketCategoryId },
       });
 
       if (existing) {
-        const diff = entrada.cantidadTotal - existing.cantidadTotal;
-        const newDisponible = Math.max(0, existing.cantidadDisponible + diff);
+        const diff = entry.totalQuantity - existing.cantidadTotal;
+        const newAvailable = Math.max(0, existing.cantidadDisponible + diff);
         const updated = await this.prisma.eventoEntrada.update({
           where: { id: existing.id },
           data: {
-            cantidadTotal: entrada.cantidadTotal,
-            cantidadDisponible: newDisponible,
-            precio: entrada.precio,
+            cantidadTotal: entry.totalQuantity,
+            cantidadDisponible: newAvailable,
+            precio: entry.price,
           },
         });
         results.push(updated);
       } else {
         const created = await this.prisma.eventoEntrada.create({
           data: {
-            eventoId,
-            categoriaEntradaId: entrada.categoriaEntradaId,
-            cantidadTotal: entrada.cantidadTotal,
-            cantidadDisponible: entrada.cantidadTotal,
-            precio: entrada.precio,
+            eventoId: eventId,
+            categoriaEntradaId: entry.ticketCategoryId,
+            cantidadTotal: entry.totalQuantity,
+            cantidadDisponible: entry.totalQuantity,
+            precio: entry.price,
           },
         });
         results.push(created);

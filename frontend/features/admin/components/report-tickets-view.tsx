@@ -46,7 +46,7 @@ function DetailDialog({
           <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
             Cargando detalle...
           </div>
-        ) : !report || report.lineas.length === 0 ? (
+        ) : !report || report.lines.length === 0 ? (
           <div className="flex h-32 flex-col items-center justify-center gap-2 text-center">
             <Ticket className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Sin boletas vendidas aún.</p>
@@ -63,19 +63,19 @@ function DetailDialog({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {report.lineas.map((linea) => (
-                  <TableRow key={linea.categoria}>
-                    <TableCell className="font-medium">{linea.categoria}</TableCell>
-                    <TableCell className="text-right">{COP(linea.precioUnitario)}</TableCell>
-                    <TableCell className="text-right">{linea.cantidadVendida}</TableCell>
-                    <TableCell className="text-right">{COP(linea.ganancia)}</TableCell>
+                {report.lines.map((line) => (
+                  <TableRow key={line.category}>
+                    <TableCell className="font-medium">{line.category}</TableCell>
+                    <TableCell className="text-right">{COP(line.unitPrice)}</TableCell>
+                    <TableCell className="text-right">{line.soldCount}</TableCell>
+                    <TableCell className="text-right">{COP(line.revenue)}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-muted/50 font-semibold">
                   <TableCell>Total</TableCell>
                   <TableCell />
-                  <TableCell className="text-right">{report.totalEntradas}</TableCell>
-                  <TableCell className="text-right">{COP(report.gananciaTotal)}</TableCell>
+                  <TableCell className="text-right">{report.totalTickets}</TableCell>
+                  <TableCell className="text-right">{COP(report.totalRevenue)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -119,19 +119,19 @@ export function ReportTicketsView() {
             ) : (
               summaries.map((s) => (
                 <div
-                  key={s.eventoId}
+                  key={s.eventId}
                   className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate font-medium text-foreground">{s.eventoNombre}</span>
+                    <span className="truncate font-medium text-foreground">{s.eventName}</span>
                     <span className="text-xs text-muted-foreground">
-                      {s.totalEntradas} boletas · {COP(s.gananciaTotal)}
+                      {s.totalTickets} boletas · {COP(s.totalRevenue)}
                     </span>
                   </div>
                   <Button
                     size="icon"
                     className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => setSelected({ id: String(s.eventoId), nombre: s.eventoNombre })}
+                    onClick={() => setSelected({ id: String(s.eventId), nombre: s.eventName })}
                     aria-label="Ver detalle"
                   >
                     <Eye className="h-4 w-4" />
@@ -161,16 +161,16 @@ export function ReportTicketsView() {
                   </TableRow>
                 ) : (
                   summaries.map((s) => (
-                    <TableRow key={s.eventoId}>
-                      <TableCell className="font-medium">{s.eventoNombre}</TableCell>
-                      <TableCell className="text-right">{s.totalEntradas}</TableCell>
-                      <TableCell className="text-right">{COP(s.gananciaTotal)}</TableCell>
+                    <TableRow key={s.eventId}>
+                      <TableCell className="font-medium">{s.eventName}</TableCell>
+                      <TableCell className="text-right">{s.totalTickets}</TableCell>
+                      <TableCell className="text-right">{COP(s.totalRevenue)}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           size="icon"
                           className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90"
                           onClick={() =>
-                            setSelected({ id: String(s.eventoId), nombre: s.eventoNombre })
+                            setSelected({ id: String(s.eventId), nombre: s.eventName })
                           }
                           aria-label="Ver detalle"
                         >

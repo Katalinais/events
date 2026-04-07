@@ -1,28 +1,28 @@
 import { IsString, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
 
-export class UpdateEventoDto {
+export class UpdateEventDto {
   @IsString()
   @IsOptional()
-  nombre?: string;
+  name?: string;
 
   @IsString()
   @IsOptional()
-  descripcion?: string;
+  description?: string;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
-  precio?: number;
+  price?: number;
 
   @IsString()
   @IsOptional()
-  urlImagen?: string;
+  imageUrl?: string;
 
   @IsDateString()
   @IsOptional()
-  fecha?: string;
+  date?: string;
 
   @IsNumber()
   @IsOptional()
-  categoriaId?: number | null;
+  categoryId?: number | null;
 }

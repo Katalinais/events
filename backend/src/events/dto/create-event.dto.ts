@@ -1,28 +1,28 @@
 import { IsString, IsNotEmpty, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
 
-export class CreateEventoDto {
+export class CreateEventDto {
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  name: string;
 
   @IsString()
   @IsOptional()
-  descripcion?: string;
+  description?: string;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
-  precio?: number;
+  price?: number;
 
   @IsString()
   @IsOptional()
-  urlImagen?: string;
+  imageUrl?: string;
 
   @IsDateString()
   @IsOptional()
-  fecha?: string;
+  date?: string;
 
   @IsNumber()
   @IsOptional()
-  categoriaId?: number;
+  categoryId?: number;
 }

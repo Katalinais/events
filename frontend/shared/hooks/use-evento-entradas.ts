@@ -1,32 +1,32 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { eventoEntradasApi } from "@/shared/lib/api-client"
+import { ticketEntriesApi } from "@/shared/lib/api-client"
 
-export const eventoEntradasKeys = {
-  byEvent: (eventoId: string) => ["evento-entradas", eventoId] as const,
+export const ticketEntryKeys = {
+  byEvent: (eventId: string) => ["ticket-entries", eventId] as const,
 }
 
-export function useEventoEntradas(eventoId: string | null) {
+export function useTicketEntries(eventId: string | null) {
   return useQuery({
-    queryKey: eventoEntradasKeys.byEvent(eventoId ?? ""),
-    queryFn: () => eventoEntradasApi.getEntradas(eventoId!),
-    enabled: !!eventoId,
+    queryKey: ticketEntryKeys.byEvent(eventId ?? ""),
+    queryFn: () => ticketEntriesApi.getTicketEntries(eventId!),
+    enabled: !!eventId,
   })
 }
 
-export function useSaveEventoEntradas() {
+export function useSaveTicketEntries() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({
-      eventoId,
-      entradas,
+      eventId,
+      entries,
     }: {
-      eventoId: string
-      entradas: { categoriaEntradaId: number; cantidadTotal: number; precio: number }[]
-    }) => eventoEntradasApi.saveEntradas(eventoId, entradas),
-    onSuccess: (_data, { eventoId }) => {
-      queryClient.invalidateQueries({ queryKey: eventoEntradasKeys.byEvent(eventoId) })
+      eventId: string
+      entries: { ticketCategoryId: number; totalQuantity: number; price: number }[]
+    }) => ticketEntriesApi.saveTicketEntries(eventId, entries),
+    onSuccess: (_data, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ticketEntryKeys.byEvent(eventId) })
     },
   })
 }

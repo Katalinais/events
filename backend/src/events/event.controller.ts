@@ -21,8 +21,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { EventService } from './event.service';
-import { CreateEventoDto } from './dto/create-evento.dto';
-import { UpdateEventoDto } from './dto/update-evento.dto';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { SaveTicketEntriesDto } from './dto/save-ticket-entries.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -35,12 +35,12 @@ export class EventController {
 
   @Post('upload-image')
   @UseInterceptors(
-    FileInterceptor('imagen', {
+    FileInterceptor('image', {
       limits: { fileSize: IMAGE_MAX_SIZE },
       fileFilter: (_req, file, cb) => {
         const ext = extname(file.originalname).toLowerCase();
         if (!ALLOWED_MIMES.test(ext) && !file.mimetype?.match(/\/(jpeg|jpg|png|gif|webp)$/)) {
-          cb(new BadRequestException('Solo se permiten imágenes (JPEG, PNG, GIF, WebP)'), false);
+          cb(new BadRequestException('Only image files are allowed (JPEG, PNG, GIF, WebP)'), false);
           return;
         }
         cb(null, true);
@@ -49,22 +49,22 @@ export class EventController {
         destination: './uploads',
         filename: (_req, file, cb) => {
           const ext = extname(file.originalname) || '.jpg';
-          cb(null, `evento-${Date.now()}${ext}`);
+          cb(null, `event-${Date.now()}${ext}`);
         },
       }),
     }),
   )
-  uploadImagen(@UploadedFile() file: Express.Multer.File) {
+  uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('No se envió ninguna imagen');
+      throw new BadRequestException('No image file was provided');
     }
     return { url: `/uploads/${file.filename}` };
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createEventoDto: CreateEventoDto) {
-    return this.eventService.create(createEventoDto);
+  create(@Body() createEventDto: CreateEventDto) {
+    return this.eventService.create(createEventDto);
   }
 
   @Get()
@@ -105,7 +105,7 @@ export class EventController {
   findFavorites(@Req() req: Request & { user?: { userId: number } }) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('Debes iniciar sesión para ver tus favoritos');
+      throw new BadRequestException('You must be logged in to view favorites');
     }
     return this.eventService.findFavoritesByUser(userId);
   }
@@ -130,7 +130,7 @@ export class EventController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('Debes iniciar sesión para marcar interés');
+      throw new BadRequestException('You must be logged in to mark interest');
     }
     return this.eventService.markInterested(id, userId);
   }
@@ -144,23 +144,23 @@ export class EventController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('Debes iniciar sesión para quitar de favoritos');
+      throw new BadRequestException('You must be logged in to remove from favorites');
     }
     return this.eventService.unmarkInterested(id, userId);
   }
 
-  @Get(':id/entradas')
-  findEntradas(@Param('id', ParseIntPipe) id: number) {
-    return this.eventService.findEntradas(id);
+  @Get(':id/ticket-entries')
+  findTicketEntries(@Param('id', ParseIntPipe) id: number) {
+    return this.eventService.findTicketEntries(id);
   }
 
-  @Post(':id/entradas')
+  @Post(':id/ticket-entries')
   @HttpCode(HttpStatus.OK)
-  saveEntradas(
+  saveTicketEntries(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SaveTicketEntriesDto,
   ) {
-    return this.eventService.saveEntradas(id, dto.entradas);
+    return this.eventService.saveTicketEntries(id, dto.entries);
   }
 
   @Get(':id')
@@ -171,9 +171,9 @@ export class EventController {
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateEventoDto: UpdateEventoDto,
+    @Body() updateEventDto: UpdateEventDto,
   ) {
-    return this.eventService.update(id, updateEventoDto);
+    return this.eventService.update(id, updateEventDto);
   }
 
   @Delete(':id')

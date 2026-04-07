@@ -96,7 +96,7 @@ export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>
 
 export async function uploadEventImage(file: File): Promise<string> {
   const formData = new FormData();
-  formData.append('imagen', file);
+  formData.append('image', file);
   const response = await fetch(`${API_BASE_URL}/events/upload-image`, {
     method: 'POST',
     body: formData,
@@ -209,26 +209,26 @@ export const eventApi = {
     return eventos.map(mapBackendToFrontend);
   },
 
-  async getAllEventsSalesSummary(): Promise<{ eventoId: number; eventoNombre: string; totalEntradas: number; gananciaTotal: number }[]> {
+  async getAllEventsSalesSummary(): Promise<{ eventId: number; eventName: string; totalTickets: number; totalRevenue: number }[]> {
     const response = await fetch(`${API_BASE_URL}/events/sales-summary`, {
       headers: { ...getAuthHeaders() },
     })
-    if (!response.ok) throw new Error('Error al obtener resumen de ventas')
+    if (!response.ok) throw new Error('Error fetching sales summary')
     return response.json()
   },
 
   async getEventSalesReport(eventId: string): Promise<{
-    eventoNombre: string
-    lineas: { categoria: string; precioUnitario: number; cantidadVendida: number; ganancia: number }[]
-    totalEntradas: number
-    gananciaTotal: number
+    eventName: string
+    lines: { category: string; unitPrice: number; soldCount: number; revenue: number }[]
+    totalTickets: number
+    totalRevenue: number
   }> {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/sales-report`, {
       headers: { ...getAuthHeaders() },
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
-      throw new Error(err.message || 'Error al obtener el reporte')
+      throw new Error(err.message || 'Error fetching sales report')
     }
     return response.json()
   },
@@ -353,12 +353,12 @@ export const categoryApi = {
   },
 };
 
-export interface EventoEntradaItem {
+export interface TicketEntryItem {
   id: string
-  categoriaEntradaId: string
-  cantidadTotal: number
-  cantidadDisponible: number
-  precio: number
+  ticketCategoryId: string
+  totalQuantity: number
+  availableQuantity: number
+  price: number
 }
 
 export interface BackendEventoEntrada {
@@ -370,39 +370,39 @@ export interface BackendEventoEntrada {
   precio: number
 }
 
-function mapEventoEntrada(e: BackendEventoEntrada): EventoEntradaItem {
+function mapTicketEntry(e: BackendEventoEntrada): TicketEntryItem {
   return {
     id: String(e.id),
-    categoriaEntradaId: String(e.categoriaEntradaId),
-    cantidadTotal: e.cantidadTotal,
-    cantidadDisponible: e.cantidadDisponible,
-    precio: e.precio,
+    ticketCategoryId: String(e.categoriaEntradaId),
+    totalQuantity: e.cantidadTotal,
+    availableQuantity: e.cantidadDisponible,
+    price: e.precio,
   }
 }
 
-export const eventoEntradasApi = {
-  async getEntradas(eventoId: string): Promise<EventoEntradaItem[]> {
-    const response = await fetch(`${API_BASE_URL}/events/${eventoId}/entradas`)
-    if (!response.ok) throw new Error('Error al obtener las entradas del evento')
+export const ticketEntriesApi = {
+  async getTicketEntries(eventId: string): Promise<TicketEntryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-entries`)
+    if (!response.ok) throw new Error('Error fetching ticket entries for event')
     const data: BackendEventoEntrada[] = await response.json()
-    return data.map(mapEventoEntrada)
+    return data.map(mapTicketEntry)
   },
 
-  async saveEntradas(
-    eventoId: string,
-    entradas: { categoriaEntradaId: number; cantidadTotal: number; precio: number }[],
-  ): Promise<EventoEntradaItem[]> {
-    const response = await fetch(`${API_BASE_URL}/events/${eventoId}/entradas`, {
+  async saveTicketEntries(
+    eventId: string,
+    entries: { ticketCategoryId: number; totalQuantity: number; price: number }[],
+  ): Promise<TicketEntryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-entries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entradas }),
+      body: JSON.stringify({ entries }),
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
-      throw new Error(err.message || 'Error al guardar las entradas')
+      throw new Error(err.message || 'Error saving ticket entries')
     }
     const data: BackendEventoEntrada[] = await response.json()
-    return data.map(mapEventoEntrada)
+    return data.map(mapTicketEntry)
   },
 }
 
