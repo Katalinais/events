@@ -80,6 +80,8 @@ export function useTopSellingEvents() {
   return useQuery({
     queryKey: [...eventKeys.all, 'top-selling'] as const,
     queryFn: () => eventApi.getTopSellingEvents(),
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
 }
 
