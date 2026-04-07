@@ -410,16 +410,21 @@ export interface BackendCategoriaEntrada {
   id: number;
   nombre: string;
   descripcion: string | null;
+  soldCount?: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export function mapCategoriaEntradaToFrontend(c: BackendCategoriaEntrada): CategoryItem {
-  return { id: String(c.id), name: c.nombre };
+export interface TicketCategoryItem extends CategoryItem {
+  soldCount: number;
+}
+
+export function mapCategoriaEntradaToFrontend(c: BackendCategoriaEntrada): TicketCategoryItem {
+  return { id: String(c.id), name: c.nombre, soldCount: c.soldCount ?? 0 };
 }
 
 export const ticketCategoryApi = {
-  async getTicketCategories(): Promise<CategoryItem[]> {
+  async getTicketCategories(): Promise<TicketCategoryItem[]> {
     const response = await fetch(`${API_BASE_URL}/ticket-categories`);
     if (!response.ok) throw new Error('Error al obtener categorías de boletas');
     const data: BackendCategoriaEntrada[] = await response.json();

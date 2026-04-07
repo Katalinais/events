@@ -7,6 +7,7 @@
     useUpdateTicketCategory,
     useDeleteTicketCategory,
   } from "@/shared/hooks/use-ticket-categories"
+  import type { TicketCategoryItem } from "@/shared/lib/api-client"
   import { CategoryManagerBase } from "./category-manager-base"
 
   export function TicketCategoryManager() {
@@ -14,6 +15,9 @@
     const createMutation = useCreateTicketCategory()
     const updateMutation = useUpdateTicketCategory()
     const deleteMutation = useDeleteTicketCategory()
+
+    const getSoldCount = (id: string) =>
+      (items as TicketCategoryItem[]).find((i) => i.id === id)?.soldCount ?? 0
 
     const handleAdd = useCallback(
       async (name: string) => {
@@ -42,9 +46,12 @@
         description="Gestiona las categorias de boletas para tus eventos."
         entityName="Categoria de Boleta"
         placeholder="Ej: VIP"
-        deleteBlockedMessage="No se puede eliminar: tiene boletas asociadas"
         items={items}
-        canDeleteItem={() => true}
+        canDeleteItem={(id) => getSoldCount(id) === 0}
+        deleteBlockedMessage={(id) => {
+          const count = getSoldCount(id)
+          return `${count} ${count === 1 ? "boleta vendida" : "boletas vendidas"}`
+        }}
         onAdd={handleAdd}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
