@@ -9,20 +9,20 @@ import {
 
 export class TicketEntryItemDto {
   @IsInt()
-  categoriaEntradaId: number;
+  ticketCategoryId: number;
 
   @IsInt()
   @Min(1)
-  cantidadTotal: number;
+  totalQuantity: number;
 
   @IsNumber()
   @Min(0)
-  precio: number;
+  price: number;
 }
 
 export class SaveTicketEntriesDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TicketEntryItemDto)
-  entradas: TicketEntryItemDto[];
+  entries: TicketEntryItemDto[];
 }

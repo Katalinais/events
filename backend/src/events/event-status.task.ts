@@ -9,7 +9,7 @@ export class EventStatusTask implements OnModuleInit {
   constructor(private readonly eventRepository: EventRepository) {}
 
   async onModuleInit() {
-    this.logger.log('Verificando eventos vencidos al iniciar...');
+    this.logger.log('Checking for expired events on startup...');
     await this.markCompletedEvents();
   }
 
@@ -22,9 +22,9 @@ export class EventStatusTask implements OnModuleInit {
     const { count } = await this.eventRepository.markEventsAsCompleted(yesterday);
 
     if (count > 0) {
-      this.logger.log(`${count} evento(s) marcado(s) como COMPLETADO`);
+      this.logger.log(`${count} event(s) marked as COMPLETED`);
     } else {
-      this.logger.debug('Sin eventos para marcar como completados');
+      this.logger.debug('No events to mark as completed');
     }
   }
 }

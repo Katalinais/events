@@ -77,26 +77,26 @@ export function mapBackendToFrontend(evento: BackendEvento): EventItem {
 }
 
 export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>): {
-  nombre: string;
-  descripcion?: string;
-  precio: number;
-  urlImagen?: string;
-  fecha: string;
-  categoriaId?: number | null;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+  date: string;
+  categoryId?: number | null;
 } {
   return {
-    nombre: event.name,
-    descripcion: event.description || undefined,
-    precio: event.price,
-    urlImagen: event.imageUrl || undefined,
-    fecha: event.date,
-    categoriaId: event.categoryId ? Number(event.categoryId) : null,
+    name: event.name,
+    description: event.description || undefined,
+    price: event.price,
+    imageUrl: event.imageUrl || undefined,
+    date: event.date,
+    categoryId: event.categoryId ? Number(event.categoryId) : null,
   };
 }
 
 export async function uploadEventImage(file: File): Promise<string> {
   const formData = new FormData();
-  formData.append('imagen', file);
+  formData.append('image', file);
   const response = await fetch(`${API_BASE_URL}/events/upload-image`, {
     method: 'POST',
     body: formData,
@@ -147,17 +147,17 @@ export const eventApi = {
 
   async updateEvent(id: string, event: Partial<Omit<EventItem, 'id' | 'interested'>>): Promise<EventItem> {
     const updateData: Record<string, unknown> = {};
-    if (event.name) updateData.nombre = event.name;
-    if (event.description !== undefined) updateData.descripcion = event.description;
-    if (event.price !== undefined) updateData.precio = event.price;
+    if (event.name) updateData.name = event.name;
+    if (event.description !== undefined) updateData.description = event.description;
+    if (event.price !== undefined) updateData.price = event.price;
     if (event.imageUrl !== undefined) {
-      updateData.urlImagen = event.imageUrl.startsWith(API_BASE_URL)
+      updateData.imageUrl = event.imageUrl.startsWith(API_BASE_URL)
         ? event.imageUrl.slice(API_BASE_URL.length)
         : event.imageUrl;
     }
-    if (event.date) updateData.fecha = event.date;
+    if (event.date) updateData.date = event.date;
     if (event.categoryId !== undefined) {
-      updateData.categoriaId = event.categoryId ? Number(event.categoryId) : null;
+      updateData.categoryId = event.categoryId ? Number(event.categoryId) : null;
     }
 
     const response = await fetch(`${API_BASE_URL}/events/${id}`, {
@@ -209,35 +209,35 @@ export const eventApi = {
     return eventos.map(mapBackendToFrontend);
   },
 
-  async getAllEventsSalesSummary(): Promise<{ eventoId: number; eventoNombre: string; totalEntradas: number; gananciaTotal: number }[]> {
+  async getAllEventsSalesSummary(): Promise<{ eventId: number; eventName: string; totalTickets: number; totalRevenue: number }[]> {
     const response = await fetch(`${API_BASE_URL}/events/sales-summary`, {
       headers: { ...getAuthHeaders() },
     })
-    if (!response.ok) throw new Error('Error al obtener resumen de ventas')
+    if (!response.ok) throw new Error('Error fetching sales summary')
     return response.json()
   },
 
   async getEventSalesReport(eventId: string): Promise<{
-    eventoNombre: string
-    lineas: { categoria: string; precioUnitario: number; cantidadVendida: number; ganancia: number }[]
-    totalEntradas: number
-    gananciaTotal: number
+    eventName: string
+    lines: { category: string; unitPrice: number; soldCount: number; revenue: number }[]
+    totalTickets: number
+    totalRevenue: number
   }> {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/sales-report`, {
       headers: { ...getAuthHeaders() },
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
-      throw new Error(err.message || 'Error al obtener el reporte')
+      throw new Error(err.message || 'Error fetching sales report')
     }
     return response.json()
   },
 
-  async getTopSellingEvents(): Promise<(EventItem & { totalVendidas: number })[]> {
+  async getTopSellingEvents(): Promise<(EventItem & { totalSold: number })[]> {
     const response = await fetch(`${API_BASE_URL}/events/top-selling`);
     if (!response.ok) throw new Error('Error al obtener top eventos');
-    const eventos: (BackendEvento & { totalVendidas: number })[] = await response.json();
-    return eventos.map((e) => ({ ...mapBackendToFrontend(e), totalVendidas: e.totalVendidas }));
+    const eventos: (BackendEvento & { totalSold: number })[] = await response.json();
+    return eventos.map((e) => ({ ...mapBackendToFrontend(e), totalSold: e.totalSold }));
   },
 
   async getPastEvents(): Promise<EventItem[]> {
@@ -318,7 +318,7 @@ export const categoryApi = {
     const response = await fetch(`${API_BASE_URL}/categories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -332,7 +332,7 @@ export const categoryApi = {
     const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -353,12 +353,12 @@ export const categoryApi = {
   },
 };
 
-export interface EventoEntradaItem {
+export interface TicketEntryItem {
   id: string
-  categoriaEntradaId: string
-  cantidadTotal: number
-  cantidadDisponible: number
-  precio: number
+  ticketCategoryId: string
+  totalQuantity: number
+  availableQuantity: number
+  price: number
 }
 
 export interface BackendEventoEntrada {
@@ -370,39 +370,39 @@ export interface BackendEventoEntrada {
   precio: number
 }
 
-function mapEventoEntrada(e: BackendEventoEntrada): EventoEntradaItem {
+function mapTicketEntry(e: BackendEventoEntrada): TicketEntryItem {
   return {
     id: String(e.id),
-    categoriaEntradaId: String(e.categoriaEntradaId),
-    cantidadTotal: e.cantidadTotal,
-    cantidadDisponible: e.cantidadDisponible,
-    precio: e.precio,
+    ticketCategoryId: String(e.categoriaEntradaId),
+    totalQuantity: e.cantidadTotal,
+    availableQuantity: e.cantidadDisponible,
+    price: e.precio,
   }
 }
 
-export const eventoEntradasApi = {
-  async getEntradas(eventoId: string): Promise<EventoEntradaItem[]> {
-    const response = await fetch(`${API_BASE_URL}/events/${eventoId}/entradas`)
-    if (!response.ok) throw new Error('Error al obtener las entradas del evento')
+export const ticketEntriesApi = {
+  async getTicketEntries(eventId: string): Promise<TicketEntryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-entries`)
+    if (!response.ok) throw new Error('Error fetching ticket entries for event')
     const data: BackendEventoEntrada[] = await response.json()
-    return data.map(mapEventoEntrada)
+    return data.map(mapTicketEntry)
   },
 
-  async saveEntradas(
-    eventoId: string,
-    entradas: { categoriaEntradaId: number; cantidadTotal: number; precio: number }[],
-  ): Promise<EventoEntradaItem[]> {
-    const response = await fetch(`${API_BASE_URL}/events/${eventoId}/entradas`, {
+  async saveTicketEntries(
+    eventId: string,
+    entries: { ticketCategoryId: number; totalQuantity: number; price: number }[],
+  ): Promise<TicketEntryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-entries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entradas }),
+      body: JSON.stringify({ entries }),
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
-      throw new Error(err.message || 'Error al guardar las entradas')
+      throw new Error(err.message || 'Error saving ticket entries')
     }
     const data: BackendEventoEntrada[] = await response.json()
-    return data.map(mapEventoEntrada)
+    return data.map(mapTicketEntry)
   },
 }
 
@@ -426,7 +426,7 @@ export function mapCategoriaEntradaToFrontend(c: BackendCategoriaEntrada): Ticke
 export const ticketCategoryApi = {
   async getTicketCategories(): Promise<TicketCategoryItem[]> {
     const response = await fetch(`${API_BASE_URL}/ticket-categories`);
-    if (!response.ok) throw new Error('Error al obtener categorías de boletas');
+    if (!response.ok) throw new Error('Error fetching ticket categories');
     const data: BackendCategoriaEntrada[] = await response.json();
     return data.map(mapCategoriaEntradaToFrontend);
   },
@@ -435,11 +435,11 @@ export const ticketCategoryApi = {
     const response = await fetch(`${API_BASE_URL}/ticket-categories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al crear la categoría de boleta');
+      throw new Error(err.message || 'Error creating ticket category');
     }
     const data: BackendCategoriaEntrada = await response.json();
     return mapCategoriaEntradaToFrontend(data);
@@ -449,11 +449,11 @@ export const ticketCategoryApi = {
     const response = await fetch(`${API_BASE_URL}/ticket-categories/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al actualizar la categoría de boleta');
+      throw new Error(err.message || 'Error updating ticket category');
     }
     const data: BackendCategoriaEntrada = await response.json();
     return mapCategoriaEntradaToFrontend(data);
@@ -465,7 +465,7 @@ export const ticketCategoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al eliminar la categoría de boleta');
+      throw new Error(err.message || 'Error deleting ticket category');
     }
   },
 };
@@ -497,8 +497,8 @@ export interface BackendTicketPurchase {
 }
 
 export interface TicketPurchaseItem {
-  eventoEntradaId: number;
-  cantidad: number;
+  eventEntryId: number;
+  quantity: number;
 }
 
 export const ticketApi = {
@@ -506,7 +506,7 @@ export const ticketApi = {
     const response = await fetch(`${API_BASE_URL}/tickets/total-earnings`, {
       headers: { ...getAuthHeaders() },
     })
-    if (!response.ok) throw new Error('Error al obtener ganancias')
+    if (!response.ok) throw new Error('Error fetching total earnings')
     const data: { total: number } = await response.json()
     return data.total
   },
@@ -519,7 +519,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al realizar la compra');
+      throw new Error(err.message || 'Error processing purchase');
     }
     return response.json();
   },
@@ -530,7 +530,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al obtener tus compras');
+      throw new Error(err.message || 'Error fetching your purchases');
     }
     return response.json();
   },
@@ -541,7 +541,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al descargar el PDF');
+      throw new Error(err.message || 'Error downloading PDF');
     }
     return response.blob();
   },
@@ -549,31 +549,31 @@ export const ticketApi = {
 
 export interface AuthUser {
   id: number;
-  nombre: string;
-  correo: string | null;
-  tipo: string;
+  name: string;
+  email: string | null;
+  role: string;
 }
 
 export interface LoginResponse {
   access_token: string;
-  usuario: AuthUser;
+  user: AuthUser;
 }
 
 export const authApi = {
   async register(data: {
-    nombre: string;
-    apellido?: string;
-    correo?: string;
+    firstName: string;
+    lastName?: string;
+    email?: string;
     username: string;
     password: string;
   }): Promise<LoginResponse> {
     const body: Record<string, unknown> = {
-      nombre: data.nombre.trim(),
-      apellido: data.apellido?.trim() || undefined,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName?.trim() || undefined,
       username: data.username.trim(),
       password: data.password,
     };
-    if (data.correo?.trim()) body.correo = data.correo.trim();
+    if (data.email?.trim()) body.email = data.email.trim();
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -581,7 +581,7 @@ export const authApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al registrarse');
+      throw new Error(err.message || 'Registration failed');
     }
     return response.json();
   },
@@ -594,7 +594,7 @@ export const authApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Usuario o contraseña incorrectos');
+      throw new Error(err.message || 'Invalid username or password');
     }
     return response.json();
   },
@@ -602,11 +602,31 @@ export const authApi = {
 
 export interface AdminUserItem {
   id: string;
+  firstName: string;
+  lastName: string | null;
+  email: string | null;
+  username: string;
+  createdAt: string;
+}
+
+interface BackendAdminUser {
+  id: number;
   nombre: string;
   apellido: string | null;
   correo: string | null;
   username: string;
   createdAt: string;
+}
+
+function mapAdminUser(u: BackendAdminUser): AdminUserItem {
+  return {
+    id: String(u.id),
+    firstName: u.nombre,
+    lastName: u.apellido,
+    email: u.correo,
+    username: u.username,
+    createdAt: u.createdAt,
+  };
 }
 
 export const userApi = {
@@ -617,17 +637,10 @@ export const userApi = {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(
-        typeof err.message === 'string' ? err.message : 'Error al obtener usuarios'
+        typeof err.message === 'string' ? err.message : 'Error fetching users'
       );
     }
-    const rows: Array<{
-      id: number;
-      nombre: string;
-      apellido: string | null;
-      correo: string | null;
-      username: string;
-      createdAt: string;
-    }> = await response.json();
-    return rows.map((r) => ({ ...r, id: String(r.id) }));
+    const data: BackendAdminUser[] = await response.json();
+    return data.map(mapAdminUser);
   },
 };

@@ -44,9 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const res = await authApi.login(username, password)
     localStorage.setItem(TOKEN_KEY, res.access_token)
-    localStorage.setItem(USER_KEY, JSON.stringify(res.usuario))
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user))
     setToken(res.access_token)
-    setUser(res.usuario)
+    setUser(res.user)
     queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
   }, [queryClient])
 

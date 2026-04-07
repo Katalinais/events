@@ -1,14 +1,14 @@
 import { IsString, IsOptional, IsNotEmpty, MaxLength } from 'class-validator';
 
-export class UpdateCategoriaEntradaDto {
+export class UpdateTicketCategoryDto {
   @IsString()
   @IsOptional()
   @IsNotEmpty()
   @MaxLength(100)
-  nombre?: string;
+  name?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(255)
-  descripcion?: string;
+  description?: string;
 }

@@ -9,19 +9,19 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() registerDto: RegisterDto) {
+  register(@Body() dto: RegisterDto) {
     return this.authService.register(
-      registerDto.nombre,
-      registerDto.apellido,
-      registerDto.correo,
-      registerDto.username,
-      registerDto.password,
+      dto.firstName,
+      dto.lastName,
+      dto.email,
+      dto.username,
+      dto.password,
     );
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto.username, loginDto.password);
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.username, dto.password);
   }
 }

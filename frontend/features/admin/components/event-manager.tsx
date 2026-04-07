@@ -58,7 +58,7 @@ import { Badge } from "@/shared/components/ui/badge"
 import { useEventContext } from "@/shared/providers/event-context"
 import { useAdminEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/shared/hooks/use-events"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
-import { useEventoEntradas, useSaveEventoEntradas } from "@/shared/hooks/use-evento-entradas"
+import { useTicketEntries, useSaveTicketEntries } from "@/shared/hooks/use-evento-entradas"
 import { uploadEventImage, type EventItem } from "@/shared/lib/api-client"
 import { toast } from "sonner"
 
@@ -70,10 +70,10 @@ interface EventFormData {
   imageUrl: string
 }
 
-interface EntradaFormRow {
-  categoriaEntradaId: string
-  cantidadTotal: string
-  precio: string
+interface TicketEntryFormRow {
+  ticketCategoryId: string
+  totalQuantity: string
+  price: string
 }
 
 const defaultFormData: EventFormData = {
@@ -91,7 +91,7 @@ export function EventManager() {
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
-  const saveEntradas = useSaveEventoEntradas()
+  const saveTicketEntries = useSaveTicketEntries()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<EventItem | null>(null)
@@ -99,27 +99,27 @@ export function EventManager() {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof EventFormData, string>>>({})
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [entradas, setEntradas] = useState<EntradaFormRow[]>([])
-  const [entradasError, setEntradasError] = useState<string | null>(null)
+  const [entries, setEntries] = useState<TicketEntryFormRow[]>([])
+  const [entriesError, setEntriesError] = useState<string | null>(null)
   const imagePreviewUrlRef = useRef<string | null>(null)
 
-  const { data: existingEntradas = [] } = useEventoEntradas(editingEvent?.id ?? null)
+  const { data: existingEntries = [] } = useTicketEntries(editingEvent?.id ?? null)
 
-  const vendidasMap = Object.fromEntries(
-    existingEntradas.map((e) => [e.categoriaEntradaId, e.cantidadTotal - e.cantidadDisponible]),
+  const soldMap = Object.fromEntries(
+    existingEntries.map((e) => [e.ticketCategoryId, e.totalQuantity - e.availableQuantity]),
   )
 
   useEffect(() => {
-    if (existingEntradas.length > 0) {
-      setEntradas(
-        existingEntradas.map((e) => ({
-          categoriaEntradaId: e.categoriaEntradaId,
-          cantidadTotal: String(e.cantidadTotal),
-          precio: String(e.precio),
+    if (existingEntries.length > 0) {
+      setEntries(
+        existingEntries.map((e) => ({
+          ticketCategoryId: e.ticketCategoryId,
+          totalQuantity: String(e.totalQuantity),
+          price: String(e.price),
         })),
       )
     }
-  }, [existingEntradas])
+  }, [existingEntries])
 
   const sortedEvents = [...events].sort((a, b) => b.interested - a.interested)
 
@@ -127,22 +127,22 @@ export function EventManager() {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
     if (!formData.name.trim()) errors.name = "El nombre es obligatorio"
     setFormErrors(errors)
-    const validEntradas = entradas.filter((e) => e.categoriaEntradaId && e.cantidadTotal && e.precio)
-    if (validEntradas.length === 0) {
-      setEntradasError("Debes agregar al menos una boleta")
+    const validEntries = entries.filter((e) => e.ticketCategoryId && e.totalQuantity && e.price)
+    if (validEntries.length === 0) {
+      setEntriesError("Debes agregar al menos una boleta")
       return false
     }
-    setEntradasError(null)
+    setEntriesError(null)
     return Object.keys(errors).length === 0
   }
 
-  const buildEntradasPayload = () =>
-    entradas
-      .filter((e) => e.categoriaEntradaId && e.cantidadTotal && e.precio)
+  const buildEntriesPayload = () =>
+    entries
+      .filter((e) => e.ticketCategoryId && e.totalQuantity && e.price)
       .map((e) => ({
-        categoriaEntradaId: Number(e.categoriaEntradaId),
-        cantidadTotal: Number(e.cantidadTotal),
-        precio: Number(e.precio),
+        ticketCategoryId: Number(e.ticketCategoryId),
+        totalQuantity: Number(e.totalQuantity),
+        price: Number(e.price),
       }))
 
   const handleCreate = async () => {
@@ -161,12 +161,12 @@ export function EventManager() {
         imageUrl: imageUrl || "",
         price: 0,
       })
-      const payload = buildEntradasPayload()
+      const payload = buildEntriesPayload()
       if (payload.length > 0) {
-        await saveEntradas.mutateAsync({ eventoId: newEvent.id, entradas: payload })
+        await saveTicketEntries.mutateAsync({ eventId: newEvent.id, entries: payload })
       }
       setFormData(defaultFormData)
-      setEntradas([])
+      setEntries([])
       setImageFile(null)
       if (imagePreviewUrlRef.current) {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -199,11 +199,11 @@ export function EventManager() {
         imageUrl,
         price: 0,
       })
-      const payload = buildEntradasPayload()
-      await saveEntradas.mutateAsync({ eventoId: editingEvent.id, entradas: payload })
+      const payload = buildEntriesPayload()
+      await saveTicketEntries.mutateAsync({ eventId: editingEvent.id, entries: payload })
       setEditingEvent(null)
       setFormData(defaultFormData)
-      setEntradas([])
+      setEntries([])
       setImageFile(null)
       if (imagePreviewUrlRef.current) {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -231,8 +231,8 @@ export function EventManager() {
   const openCreate = () => {
     setFormData(defaultFormData)
     setFormErrors({})
-    setEntradas([])
-    setEntradasError(null)
+    setEntries([])
+    setEntriesError(null)
     setImageFile(null)
     if (imagePreviewUrlRef.current) {
       URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -251,7 +251,7 @@ export function EventManager() {
       imageUrl: event.imageUrl,
     })
     setFormErrors({})
-    setEntradasError(null)
+    setEntriesError(null)
     setImageFile(null)
     if (imagePreviewUrlRef.current) {
       URL.revokeObjectURL(imagePreviewUrlRef.current)
@@ -409,7 +409,7 @@ export function EventManager() {
             size="sm"
             className="h-7 gap-1 text-xs"
             onClick={() =>
-              setEntradas((prev) => [...prev, { categoriaEntradaId: "", cantidadTotal: "", precio: "" }])
+              setEntries((prev) => [...prev, { ticketCategoryId: "", totalQuantity: "", price: "" }])
             }
           >
             <Plus className="h-3.5 w-3.5" />
@@ -417,26 +417,26 @@ export function EventManager() {
           </Button>
         </div>
 
-        {entradasError && (
+        {entriesError && (
           <p className="flex items-center gap-1 text-sm text-destructive">
             <AlertCircle className="h-3.5 w-3.5" />
-            {entradasError}
+            {entriesError}
           </p>
         )}
-        {entradas.length === 0 ? (
+        {entries.length === 0 ? (
           <p className="text-xs text-muted-foreground">No se han agregado boletas.</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {entradas.map((entrada, index) => {
-              const vendidas = vendidasMap[entrada.categoriaEntradaId] ?? 0
-              const minCantidad = Math.max(1, vendidas)
+            {entries.map((entry, index) => {
+              const sold = soldMap[entry.ticketCategoryId] ?? 0
+              const minQuantity = Math.max(1, sold)
               return (
               <div key={index} className="grid grid-cols-[1fr_80px_90px_32px] items-start gap-2">
                 <Select
-                  value={entrada.categoriaEntradaId || "none"}
+                  value={entry.ticketCategoryId || "none"}
                   onValueChange={(v) =>
-                    setEntradas((prev) =>
-                      prev.map((e, i) => (i === index ? { ...e, categoriaEntradaId: v === "none" ? "" : v } : e)),
+                    setEntries((prev) =>
+                      prev.map((e, i) => (i === index ? { ...e, ticketCategoryId: v === "none" ? "" : v } : e)),
                     )
                   }
                 >
@@ -455,18 +455,18 @@ export function EventManager() {
                 <div className="flex flex-col gap-0.5">
                   <Input
                     type="number"
-                    min={minCantidad}
+                    min={minQuantity}
                     placeholder="Cant."
                     className="h-8 text-xs"
-                    value={entrada.cantidadTotal}
+                    value={entry.totalQuantity}
                     onChange={(e) =>
-                      setEntradas((prev) =>
-                        prev.map((row, i) => (i === index ? { ...row, cantidadTotal: e.target.value } : row)),
+                      setEntries((prev) =>
+                        prev.map((row, i) => (i === index ? { ...row, totalQuantity: e.target.value } : row)),
                       )
                     }
                   />
-                  {editingEvent && vendidas > 0 && (
-                    <span className="text-[10px] text-muted-foreground">{vendidas} vendidas</span>
+                  {editingEvent && sold > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{sold} vendidas</span>
                   )}
                 </div>
                 <Input
@@ -475,10 +475,10 @@ export function EventManager() {
                   step="0.01"
                   placeholder="Precio"
                   className="h-8 text-xs"
-                  value={entrada.precio}
+                  value={entry.price}
                   onChange={(e) =>
-                    setEntradas((prev) =>
-                      prev.map((row, i) => (i === index ? { ...row, precio: e.target.value } : row)),
+                    setEntries((prev) =>
+                      prev.map((row, i) => (i === index ? { ...row, price: e.target.value } : row)),
                     )
                   }
                 />
@@ -487,7 +487,7 @@ export function EventManager() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => setEntradas((prev) => prev.filter((_, i) => i !== index))}
+                  onClick={() => setEntries((prev) => prev.filter((_, i) => i !== index))}
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>

@@ -69,11 +69,11 @@ export function ReportUsersView() {
               className="rounded-lg border border-border bg-card px-4 py-3 text-sm"
             >
               <p className="font-medium text-foreground">
-                {u.nombre}
-                {u.apellido ? ` ${u.apellido}` : ""}
+                {u.firstName}
+                {u.lastName ? ` ${u.lastName}` : ""}
               </p>
               <p className="text-muted-foreground">@{u.username}</p>
-              {u.correo && <p className="text-muted-foreground">{u.correo}</p>}
+              {u.email && <p className="text-muted-foreground">{u.email}</p>}
               <div className="mt-2 text-xs text-muted-foreground">
                 {formatDate(u.createdAt)}
               </div>
@@ -103,11 +103,11 @@ export function ReportUsersView() {
               users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">
-                    {u.nombre}
-                    {u.apellido ? ` ${u.apellido}` : ""}
+                    {u.firstName}
+                    {u.lastName ? ` ${u.lastName}` : ""}
                   </TableCell>
                   <TableCell>@{u.username}</TableCell>
-                  <TableCell className="text-muted-foreground">{u.correo ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.email ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">
                     {formatDate(u.createdAt)}
                   </TableCell>

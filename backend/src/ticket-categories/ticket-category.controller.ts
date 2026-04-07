@@ -11,8 +11,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { TicketCategoryService } from './ticket-category.service';
-import { CreateCategoriaEntradaDto } from './dto/create-categoria-entrada.dto';
-import { UpdateCategoriaEntradaDto } from './dto/update-categoria-entrada.dto';
+import { CreateTicketCategoryDto } from './dto/create-ticket-category.dto';
+import { UpdateTicketCategoryDto } from './dto/update-ticket-category.dto';
 
 @Controller('ticket-categories')
 export class TicketCategoryController {
@@ -25,14 +25,14 @@ export class TicketCategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateCategoriaEntradaDto) {
+  create(@Body() dto: CreateTicketCategoryDto) {
     return this.ticketCategoryService.create(dto);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCategoriaEntradaDto,
+    @Body() dto: UpdateTicketCategoryDto,
   ) {
     return this.ticketCategoryService.update(id, dto);
   }

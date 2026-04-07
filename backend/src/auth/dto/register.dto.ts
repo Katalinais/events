@@ -2,25 +2,25 @@ import { IsString, IsNotEmpty, IsEmail, IsOptional, MinLength, MaxLength } from 
 
 export class RegisterDto {
   @IsString()
-  @IsNotEmpty({ message: 'El nombre es obligatorio' })
+  @IsNotEmpty({ message: 'First name is required' })
   @MaxLength(100)
-  nombre: string;
+  firstName: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(100)
-  apellido?: string;
+  lastName?: string;
 
   @IsOptional()
   @IsEmail()
-  correo?: string;
+  email?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'El usuario es obligatorio' })
+  @IsNotEmpty({ message: 'Username is required' })
   username: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'La contraseña es obligatoria' })
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
+  @IsNotEmpty({ message: 'Password is required' })
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
   password: string;
 }

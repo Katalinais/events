@@ -3,11 +3,11 @@ import { Type } from 'class-transformer';
 
 export class TicketItemDto {
   @IsInt()
-  eventoEntradaId: number;
+  eventEntryId: number;
 
   @IsInt()
   @Min(1)
-  cantidad: number;
+  quantity: number;
 }
 
 export class CreateTicketDto {

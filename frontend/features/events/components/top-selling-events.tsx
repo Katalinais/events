@@ -68,7 +68,7 @@ export function TopSellingEvents() {
                 </div>
                 <div className="flex items-center gap-1 text-xs font-medium text-primary">
                   <Ticket className="h-3 w-3 shrink-0" />
-                  {event.totalVendidas} {event.totalVendidas === 1 ? "boleta vendida" : "boletas vendidas"}
+                  {event.totalSold} {event.totalSold === 1 ? "boleta vendida" : "boletas vendidas"}
                 </div>
               </div>
             </div>

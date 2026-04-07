@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/shared/components/ui/dialog"
 import { Separator } from "@/shared/components/ui/separator"
-import { useEventoEntradas } from "@/shared/hooks/use-evento-entradas"
+import { useTicketEntries } from "@/shared/hooks/use-evento-entradas"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { usePurchaseTickets } from "@/shared/hooks/use-tickets"
 import { useAuth } from "@/shared/providers/auth-context"
@@ -49,7 +49,7 @@ function formatExpiry(value: string) {
 
 export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onRequestLogin }: PurchaseDialogProps) {
   const { isAuthenticated } = useAuth()
-  const { data: entradas = [], isLoading } = useEventoEntradas(open ? eventId : null)
+  const { data: entries = [], isLoading } = useTicketEntries(open ? eventId : null)
   const { data: ticketCategories = [] } = useTicketCategories()
   const purchase = usePurchaseTickets()
 
@@ -61,20 +61,20 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const [purchasedId, setPurchasedId] = useState<number | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
 
-  const getCategoryName = (categoriaEntradaId: string) =>
-    ticketCategories.find((c) => c.id === categoriaEntradaId)?.name ?? "Boleta"
+  const getCategoryName = (ticketCategoryId: string) =>
+    ticketCategories.find((c) => c.id === ticketCategoryId)?.name ?? "Boleta"
 
-  const updateQuantity = (entradaId: string, delta: number, max: number) => {
+  const updateQuantity = (entryId: string, delta: number, max: number) => {
     setQuantities((prev) => {
-      const current = prev[entradaId] ?? 0
+      const current = prev[entryId] ?? 0
       const next = Math.min(max, Math.max(0, current + delta))
-      return { ...prev, [entradaId]: next }
+      return { ...prev, [entryId]: next }
     })
   }
 
-  const total = entradas.reduce((sum, entrada) => {
-    const qty = quantities[entrada.id] ?? 0
-    return sum + qty * entrada.precio
+  const total = entries.reduce((sum, entry) => {
+    const qty = quantities[entry.id] ?? 0
+    return sum + qty * entry.price
   }, 0)
 
   const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0)
@@ -116,9 +116,9 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const handlePurchase = async () => {
     if (!validateBilling()) return
 
-    const items = entradas
+    const items = entries
       .filter((e) => (quantities[e.id] ?? 0) > 0)
-      .map((e) => ({ eventoEntradaId: Number(e.id), cantidad: quantities[e.id] }))
+      .map((e) => ({ eventEntryId: Number(e.id), quantity: quantities[e.id] }))
 
     const result = await purchase.mutateAsync(items).catch(() => null)
     if (result) {
@@ -178,27 +178,27 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
                 <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
                   Cargando boletas...
                 </div>
-              ) : entradas.length === 0 ? (
+              ) : entries.length === 0 ? (
                 <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
                   No hay boletas disponibles para este evento.
                 </div>
               ) : (
-                entradas.map((entrada) => {
-                  const qty = quantities[entrada.id] ?? 0
-                  const disponible = entrada.cantidadDisponible
-                  const precio = new Intl.NumberFormat("es-ES", { style: "currency", currency: "COP" }).format(entrada.precio)
+                entries.map((entry) => {
+                  const qty = quantities[entry.id] ?? 0
+                  const available = entry.availableQuantity
+                  const formattedPrice = new Intl.NumberFormat("es-ES", { style: "currency", currency: "COP" }).format(entry.price)
                   return (
-                    <div key={entrada.id} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+                    <div key={entry.id} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium">{getCategoryName(entrada.categoriaEntradaId)}</span>
-                        <span className="text-xs text-muted-foreground">{precio} · {disponible} disponibles</span>
+                        <span className="text-sm font-medium">{getCategoryName(entry.ticketCategoryId)}</span>
+                        <span className="text-xs text-muted-foreground">{formattedPrice} · {available} disponibles</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty === 0} onClick={() => updateQuantity(entrada.id, -1, disponible)}>
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty === 0} onClick={() => updateQuantity(entry.id, -1, available)}>
                           <Minus className="h-3.5 w-3.5" />
                         </Button>
                         <span className="w-5 text-center text-sm tabular-nums">{qty}</span>
-                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty >= disponible} onClick={() => updateQuantity(entrada.id, 1, disponible)}>
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty >= available} onClick={() => updateQuantity(entry.id, 1, available)}>
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -208,7 +208,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
               )}
             </div>
 
-            {entradas.length > 0 && (
+            {entries.length > 0 && (
               <>
                 <Separator />
                 <div className="flex items-center justify-between px-1 text-sm">

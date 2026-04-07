@@ -44,38 +44,38 @@ export class AuthService {
         tipo: 'EXTERNO',
       },
     });
-    const payload = { sub: user.id, correo: user.correo ?? '', tipo: user.tipo };
+    const payload = { sub: user.id, email: user.correo ?? '', role: user.tipo };
     return {
       access_token: this.jwtService.sign(payload),
-      usuario: {
+      user: {
         id: user.id,
-        nombre: user.nombre,
-        correo: user.correo,
-        tipo: user.tipo,
+        name: user.nombre,
+        email: user.correo,
+        role: user.tipo,
       },
     };
   }
 
   async login(username: string, password: string) {
     const trimmedUsername = username.trim();
-    const usuario = await this.prisma.usuario.findFirst({
+    const user = await this.prisma.usuario.findFirst({
       where: { username: trimmedUsername },
     });
-    if (!usuario || !usuario.password) {
-      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid username or password');
     }
-    const valid = await bcrypt.compare(password, usuario.password);
+    const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+      throw new UnauthorizedException('Invalid username or password');
     }
-    const payload = { sub: usuario.id, correo: usuario.correo, tipo: usuario.tipo };
+    const payload = { sub: user.id, email: user.correo, role: user.tipo };
     return {
       access_token: this.jwtService.sign(payload),
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        tipo: usuario.tipo,
+      user: {
+        id: user.id,
+        name: user.nombre,
+        email: user.correo,
+        role: user.tipo,
       },
     };
   }
