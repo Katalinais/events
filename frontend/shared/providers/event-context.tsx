@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useCallback } from "react"
 import type { Category } from "@/shared/lib/store"
-import { useEvents as useEventsQuery } from "@/shared/hooks/use-events"
+import { useAdminEvents } from "@/shared/hooks/use-events"
 import {
   useCategories,
   useCreateCategory,
@@ -23,7 +23,7 @@ const EventContext = createContext<EventContextType | undefined>(undefined)
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
   const { data: categories = [] } = useCategories()
-  const { data: events = [] } = useEventsQuery()
+  const { data: events = [] } = useAdminEvents()
   const createCategory = useCreateCategory()
   const updateCategoryMutation = useUpdateCategory()
   const deleteCategoryMutation = useDeleteCategory()

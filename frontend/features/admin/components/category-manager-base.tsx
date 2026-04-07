@@ -48,7 +48,7 @@ interface CategoryManagerBaseProps {
   description: string
   entityName: string
   placeholder: string
-  deleteBlockedMessage?: string
+  deleteBlockedMessage?: string | ((id: string) => string)
   items: CategoryItem[]
   canDeleteItem: (id: string) => boolean
   onAdd: (name: string) => Promise<void>
@@ -204,7 +204,11 @@ export function CategoryManagerBase({
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {isDeletable ? "Eliminar" : deleteBlockedMessage}
+                              {isDeletable
+                                ? "Eliminar"
+                                : typeof deleteBlockedMessage === "function"
+                                  ? deleteBlockedMessage(item.id)
+                                  : deleteBlockedMessage}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

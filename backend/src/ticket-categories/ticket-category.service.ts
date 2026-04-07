@@ -17,7 +17,7 @@ export class TicketCategoryService {
   }
 
   async findAll() {
-    return this.ticketCategoryRepository.findAllActive();
+    return this.ticketCategoryRepository.findAllActiveWithSoldCount();
   }
 
   async findOne(id: number) {
@@ -50,9 +50,11 @@ export class TicketCategoryService {
 
   async remove(id: number) {
     await this.findOne(id);
-    const inUse = await this.ticketCategoryRepository.countActiveEventoEntradasById(id);
-    if (inUse > 0) {
-      throw new ConflictException('No se puede eliminar: tiene boletas asociadas');
+    const soldCount = await this.ticketCategoryRepository.countSoldTicketsByCategoriaId(id);
+    if (soldCount > 0) {
+      throw new ConflictException(
+        `No se puede eliminar esta categoría porque ya tiene ${soldCount} ${soldCount === 1 ? 'boleta vendida' : 'boletas vendidas'}`,
+      );
     }
     return this.ticketCategoryRepository.softDeleteById(id);
   }
