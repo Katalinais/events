@@ -17,7 +17,7 @@ function HomeContent() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const [showLogin, setShowLogin] = useState(false)
   const [authFormMode, setAuthFormMode] = useState<"login" | "register">("login")
-  const isAdmin = user?.tipo === "ADMINISTRADOR"
+  const isAdmin = user?.role === "ADMINISTRADOR"
 
   useEffect(() => {
     if (searchParams.get("login") === "1") setShowLogin(true)

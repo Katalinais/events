@@ -14,7 +14,7 @@ interface PublicNavbarProps {
 
 export function PublicNavbar({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
   const { isAuthenticated, user, logout } = useAuth()
-  const isAdmin = user?.tipo === "ADMINISTRADOR"
+  const isAdmin = user?.role === "ADMINISTRADOR"
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const tab = searchParams.get("tab")

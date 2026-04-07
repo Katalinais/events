@@ -12,7 +12,7 @@ export default function UserLayout({
 }) {
   const { isAuthenticated, isLoading, user } = useAuth()
   const router = useRouter()
-  const isAdmin = user?.tipo === "ADMINISTRADOR"
+  const isAdmin = user?.role === "ADMINISTRADOR"
 
   useEffect(() => {
     if (isLoading) return

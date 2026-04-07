@@ -549,31 +549,31 @@ export const ticketApi = {
 
 export interface AuthUser {
   id: number;
-  nombre: string;
-  correo: string | null;
-  tipo: string;
+  name: string;
+  email: string | null;
+  role: string;
 }
 
 export interface LoginResponse {
   access_token: string;
-  usuario: AuthUser;
+  user: AuthUser;
 }
 
 export const authApi = {
   async register(data: {
-    nombre: string;
-    apellido?: string;
-    correo?: string;
+    firstName: string;
+    lastName?: string;
+    email?: string;
     username: string;
     password: string;
   }): Promise<LoginResponse> {
     const body: Record<string, unknown> = {
-      nombre: data.nombre.trim(),
-      apellido: data.apellido?.trim() || undefined,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName?.trim() || undefined,
       username: data.username.trim(),
       password: data.password,
     };
-    if (data.correo?.trim()) body.correo = data.correo.trim();
+    if (data.email?.trim()) body.email = data.email.trim();
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -581,7 +581,7 @@ export const authApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al registrarse');
+      throw new Error(err.message || 'Registration failed');
     }
     return response.json();
   },
@@ -594,7 +594,7 @@ export const authApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Usuario o contraseña incorrectos');
+      throw new Error(err.message || 'Invalid username or password');
     }
     return response.json();
   },

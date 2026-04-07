@@ -16,16 +16,16 @@ interface RegisterFormProps {
 
 export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFormProps) {
   const { setSession } = useAuth()
-  const [nombre, setNombre] = useState("")
-  const [apellido, setApellido] = useState("")
-  const [correo, setCorreo] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!nombre.trim()) {
+    if (!firstName.trim()) {
       toast.error("El nombre es obligatorio")
       return
     }
@@ -40,13 +40,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
     setIsSubmitting(true)
     try {
       const res = await authApi.register({
-        nombre,
-        apellido,
-        ...(correo.trim() && { correo: correo.trim() }),
+        firstName,
+        lastName,
+        ...(email.trim() && { email: email.trim() }),
         username,
         password,
       })
-      setSession(res.access_token, res.usuario)
+      setSession(res.access_token, res.user)
       toast.success("Cuenta creada correctamente")
       setPassword("")
       onSuccess?.()
@@ -72,36 +72,36 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="reg-nombre">Nombre *</Label>
+              <Label htmlFor="reg-first-name">Nombre *</Label>
               <Input
-                id="reg-nombre"
+                id="reg-first-name"
                 type="text"
                 placeholder="Tu nombre"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 autoComplete="given-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-apellido">Apellido</Label>
+              <Label htmlFor="reg-last-name">Apellido</Label>
               <Input
-                id="reg-apellido"
+                id="reg-last-name"
                 type="text"
                 placeholder="Tu apellido"
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 autoComplete="family-name"
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reg-correo">Correo (opcional)</Label>
+            <Label htmlFor="reg-email">Correo (opcional)</Label>
             <Input
-              id="reg-correo"
+              id="reg-email"
               type="email"
               placeholder="ejemplo@correo.com"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
             />
           </div>
