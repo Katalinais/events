@@ -77,20 +77,20 @@ export function mapBackendToFrontend(evento: BackendEvento): EventItem {
 }
 
 export function mapFrontendToBackend(event: Omit<EventItem, 'id' | 'interested'>): {
-  nombre: string;
-  descripcion?: string;
-  precio: number;
-  urlImagen?: string;
-  fecha: string;
-  categoriaId?: number | null;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+  date: string;
+  categoryId?: number | null;
 } {
   return {
-    nombre: event.name,
-    descripcion: event.description || undefined,
-    precio: event.price,
-    urlImagen: event.imageUrl || undefined,
-    fecha: event.date,
-    categoriaId: event.categoryId ? Number(event.categoryId) : null,
+    name: event.name,
+    description: event.description || undefined,
+    price: event.price,
+    imageUrl: event.imageUrl || undefined,
+    date: event.date,
+    categoryId: event.categoryId ? Number(event.categoryId) : null,
   };
 }
 
@@ -147,17 +147,17 @@ export const eventApi = {
 
   async updateEvent(id: string, event: Partial<Omit<EventItem, 'id' | 'interested'>>): Promise<EventItem> {
     const updateData: Record<string, unknown> = {};
-    if (event.name) updateData.nombre = event.name;
-    if (event.description !== undefined) updateData.descripcion = event.description;
-    if (event.price !== undefined) updateData.precio = event.price;
+    if (event.name) updateData.name = event.name;
+    if (event.description !== undefined) updateData.description = event.description;
+    if (event.price !== undefined) updateData.price = event.price;
     if (event.imageUrl !== undefined) {
-      updateData.urlImagen = event.imageUrl.startsWith(API_BASE_URL)
+      updateData.imageUrl = event.imageUrl.startsWith(API_BASE_URL)
         ? event.imageUrl.slice(API_BASE_URL.length)
         : event.imageUrl;
     }
-    if (event.date) updateData.fecha = event.date;
+    if (event.date) updateData.date = event.date;
     if (event.categoryId !== undefined) {
-      updateData.categoriaId = event.categoryId ? Number(event.categoryId) : null;
+      updateData.categoryId = event.categoryId ? Number(event.categoryId) : null;
     }
 
     const response = await fetch(`${API_BASE_URL}/events/${id}`, {
@@ -233,11 +233,11 @@ export const eventApi = {
     return response.json()
   },
 
-  async getTopSellingEvents(): Promise<(EventItem & { totalVendidas: number })[]> {
+  async getTopSellingEvents(): Promise<(EventItem & { totalSold: number })[]> {
     const response = await fetch(`${API_BASE_URL}/events/top-selling`);
     if (!response.ok) throw new Error('Error al obtener top eventos');
-    const eventos: (BackendEvento & { totalVendidas: number })[] = await response.json();
-    return eventos.map((e) => ({ ...mapBackendToFrontend(e), totalVendidas: e.totalVendidas }));
+    const eventos: (BackendEvento & { totalSold: number })[] = await response.json();
+    return eventos.map((e) => ({ ...mapBackendToFrontend(e), totalSold: e.totalSold }));
   },
 
   async getPastEvents(): Promise<EventItem[]> {
