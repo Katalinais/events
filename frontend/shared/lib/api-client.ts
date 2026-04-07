@@ -426,7 +426,7 @@ export function mapCategoriaEntradaToFrontend(c: BackendCategoriaEntrada): Ticke
 export const ticketCategoryApi = {
   async getTicketCategories(): Promise<TicketCategoryItem[]> {
     const response = await fetch(`${API_BASE_URL}/ticket-categories`);
-    if (!response.ok) throw new Error('Error al obtener categorías de boletas');
+    if (!response.ok) throw new Error('Error fetching ticket categories');
     const data: BackendCategoriaEntrada[] = await response.json();
     return data.map(mapCategoriaEntradaToFrontend);
   },
@@ -435,11 +435,11 @@ export const ticketCategoryApi = {
     const response = await fetch(`${API_BASE_URL}/ticket-categories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al crear la categoría de boleta');
+      throw new Error(err.message || 'Error creating ticket category');
     }
     const data: BackendCategoriaEntrada = await response.json();
     return mapCategoriaEntradaToFrontend(data);
@@ -449,11 +449,11 @@ export const ticketCategoryApi = {
     const response = await fetch(`${API_BASE_URL}/ticket-categories/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al actualizar la categoría de boleta');
+      throw new Error(err.message || 'Error updating ticket category');
     }
     const data: BackendCategoriaEntrada = await response.json();
     return mapCategoriaEntradaToFrontend(data);
@@ -465,7 +465,7 @@ export const ticketCategoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al eliminar la categoría de boleta');
+      throw new Error(err.message || 'Error deleting ticket category');
     }
   },
 };

@@ -6,20 +6,20 @@ import type { CategoriaEntrada } from '@prisma/client';
 export class TicketCategoryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findActiveByNombreInsensitive(nombre: string): Promise<CategoriaEntrada | null> {
+  findActiveByNameInsensitive(name: string): Promise<CategoriaEntrada | null> {
     return this.prisma.categoriaEntrada.findFirst({
-      where: { deletedAt: null, nombre: { equals: nombre, mode: 'insensitive' } },
+      where: { deletedAt: null, nombre: { equals: name, mode: 'insensitive' } },
     });
   }
 
-  findOtherActiveByNombreInsensitive(
-    nombre: string,
+  findOtherActiveByNameInsensitive(
+    name: string,
     excludeId: number,
   ): Promise<CategoriaEntrada | null> {
     return this.prisma.categoriaEntrada.findFirst({
       where: {
         deletedAt: null,
-        nombre: { equals: nombre, mode: 'insensitive' },
+        nombre: { equals: name, mode: 'insensitive' },
         id: { not: excludeId },
       },
     });
@@ -49,13 +49,13 @@ export class TicketCategoryRepository {
     return this.prisma.categoriaEntrada.update({ where: { id }, data });
   }
 
-  countActiveEventoEntradasById(categoriaEntradaId: number): Promise<number> {
-    return this.prisma.eventoEntrada.count({ where: { categoriaEntradaId } });
+  countActiveEventEntriesById(ticketCategoryId: number): Promise<number> {
+    return this.prisma.eventoEntrada.count({ where: { categoriaEntradaId: ticketCategoryId } });
   }
 
-  async countSoldTicketsByCategoriaId(categoriaEntradaId: number): Promise<number> {
+  async countSoldTicketsByCategoryId(ticketCategoryId: number): Promise<number> {
     const result = await this.prisma.detalleBoleta.aggregate({
-      where: { eventoEntrada: { categoriaEntradaId } },
+      where: { eventoEntrada: { categoriaEntradaId: ticketCategoryId } },
       _sum: { cantidad: true },
     });
     return result._sum.cantidad ?? 0;
@@ -72,15 +72,15 @@ export class TicketCategoryRepository {
       _sum: { cantidad: true },
     });
 
-    const eventoEntradas = await this.prisma.eventoEntrada.findMany({
+    const eventEntries = await this.prisma.eventoEntrada.findMany({
       where: { categoriaEntradaId: { in: categories.map((c) => c.id) } },
       select: { id: true, categoriaEntradaId: true },
     });
 
-    const entradaToCategory = new Map(eventoEntradas.map((e) => [e.id, e.categoriaEntradaId]));
+    const entryToCategory = new Map(eventEntries.map((e) => [e.id, e.categoriaEntradaId]));
     const soldByCategory = new Map<number, number>();
     for (const g of soldGroups) {
-      const catId = entradaToCategory.get(g.eventoEntradaId);
+      const catId = entryToCategory.get(g.eventoEntradaId);
       if (catId !== undefined) {
         soldByCategory.set(catId, (soldByCategory.get(catId) ?? 0) + (g._sum.cantidad ?? 0));
       }
