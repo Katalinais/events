@@ -292,7 +292,7 @@ export function AppNavbar({
               <Menu className="h-5 w-5" />
             </Button>
             <Link href="/" className="flex items-center gap-2" onClick={onLogoClick}>
-              <Image src="/logo.png" alt="logo" width={28} height={28} className="h-7 w-7 rounded-lg" priority />
+              <Image src="/logo.png" alt="logo" width={28} height={28} className="h-7 w-7 rounded-lg ring-1 ring-border" priority />
               <span className="text-base font-bold tracking-tight text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                 {brandLabel}
               </span>

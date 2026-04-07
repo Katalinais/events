@@ -10,4 +10,5 @@ node_modules
 backend/.DS_Store
 backend/src/.DS_Store
 .gitignore
+frontend/.DS_Store
 
