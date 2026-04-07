@@ -602,11 +602,31 @@ export const authApi = {
 
 export interface AdminUserItem {
   id: string;
+  firstName: string;
+  lastName: string | null;
+  email: string | null;
+  username: string;
+  createdAt: string;
+}
+
+interface BackendAdminUser {
+  id: number;
   nombre: string;
   apellido: string | null;
   correo: string | null;
   username: string;
   createdAt: string;
+}
+
+function mapAdminUser(u: BackendAdminUser): AdminUserItem {
+  return {
+    id: String(u.id),
+    firstName: u.nombre,
+    lastName: u.apellido,
+    email: u.correo,
+    username: u.username,
+    createdAt: u.createdAt,
+  };
 }
 
 export const userApi = {
@@ -617,17 +637,10 @@ export const userApi = {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(
-        typeof err.message === 'string' ? err.message : 'Error al obtener usuarios'
+        typeof err.message === 'string' ? err.message : 'Error fetching users'
       );
     }
-    const rows: Array<{
-      id: number;
-      nombre: string;
-      apellido: string | null;
-      correo: string | null;
-      username: string;
-      createdAt: string;
-    }> = await response.json();
-    return rows.map((r) => ({ ...r, id: String(r.id) }));
+    const data: BackendAdminUser[] = await response.json();
+    return data.map(mapAdminUser);
   },
 };

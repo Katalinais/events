@@ -6,8 +6,8 @@ export class UsersService {
   constructor(private readonly userRepository: UserRepository) {}
 
   async findAll() {
-    const rows = await this.userRepository.findManyNonAdminOrderedByCreatedDesc();
-    return rows.map((u) => ({
+    const users = await this.userRepository.findManyNonAdminOrderedByCreatedDesc();
+    return users.map((u) => ({
       ...u,
       createdAt: u.createdAt.toISOString(),
     }));
