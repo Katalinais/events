@@ -6,28 +6,28 @@ import type { Categoria } from '@prisma/client';
 export class CategoryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findActiveByNombreInsensitive(nombre: string): Promise<Categoria | null> {
+  findActiveByNameInsensitive(name: string): Promise<Categoria | null> {
     return this.prisma.categoria.findFirst({
-      where: { deletedAt: null, nombre: { equals: nombre, mode: 'insensitive' } },
+      where: { deletedAt: null, nombre: { equals: name, mode: 'insensitive' } },
     });
   }
 
-  findOtherActiveByNombreInsensitive(
-    nombre: string,
+  findOtherActiveByNameInsensitive(
+    name: string,
     excludeId: number,
   ): Promise<Categoria | null> {
     return this.prisma.categoria.findFirst({
       where: {
         deletedAt: null,
-        nombre: { equals: nombre, mode: 'insensitive' },
+        nombre: { equals: name, mode: 'insensitive' },
         id: { not: excludeId },
       },
     });
   }
 
-  create(nombre: string): Promise<Categoria> {
+  create(name: string): Promise<Categoria> {
     return this.prisma.categoria.create({
-      data: { nombre },
+      data: { nombre: name },
     });
   }
 
@@ -44,16 +44,16 @@ export class CategoryRepository {
     });
   }
 
-  update(id: number, data: { nombre?: string }): Promise<Categoria> {
+  update(id: number, data: { name?: string }): Promise<Categoria> {
     return this.prisma.categoria.update({
       where: { id },
-      data,
+      data: { nombre: data.name },
     });
   }
 
-  countActiveEventsByCategoriaId(categoriaId: number): Promise<number> {
+  countActiveEventsByCategoryId(categoryId: number): Promise<number> {
     return this.prisma.evento.count({
-      where: { categoriaId, deletedAt: null },
+      where: { categoriaId: categoryId, deletedAt: null },
     });
   }
 

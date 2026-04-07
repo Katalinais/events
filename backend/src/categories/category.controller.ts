@@ -11,8 +11,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { CreateCategoriaDto } from './dto/create-categoria.dto';
-import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Controller('categories')
 export class CategoryController {
@@ -20,8 +20,8 @@ export class CategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createCategoriaDto: CreateCategoriaDto) {
-    return this.categoryService.create(createCategoriaDto);
+  create(@Body() dto: CreateCategoryDto) {
+    return this.categoryService.create(dto);
   }
 
   @Get()
@@ -35,11 +35,8 @@ export class CategoryController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateCategoriaDto: UpdateCategoriaDto,
-  ) {
-    return this.categoryService.update(id, updateCategoriaDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCategoryDto) {
+    return this.categoryService.update(id, dto);
   }
 
   @Delete(':id')

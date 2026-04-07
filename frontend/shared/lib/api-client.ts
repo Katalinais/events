@@ -318,7 +318,7 @@ export const categoryApi = {
     const response = await fetch(`${API_BASE_URL}/categories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -332,7 +332,7 @@ export const categoryApi = {
     const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: name.trim() }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
