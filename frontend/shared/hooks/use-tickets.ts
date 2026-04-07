@@ -19,7 +19,7 @@ export function usePurchaseTickets() {
       toast.success("¡Compra realizada con éxito!")
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al realizar la compra")
+      toast.error(error.message || "Error processing purchase")
     },
   })
 }

@@ -1,335 +1,116 @@
-"use client"
+import * as PDFDocument from 'pdfkit';
+import { generateQRBuffer } from './qr.util';
 
-import { useState } from "react"
-import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download, CreditCard, Lock, ChevronLeft } from "lucide-react"
-import { Button } from "@/shared/components/ui/button"
-import { Input } from "@/shared/components/ui/input"
-import { Label } from "@/shared/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/shared/components/ui/dialog"
-import { Separator } from "@/shared/components/ui/separator"
-import { useTicketEntries } from "@/shared/hooks/use-evento-entradas"
-import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
-import { usePurchaseTickets } from "@/shared/hooks/use-tickets"
-import { useAuth } from "@/shared/providers/auth-context"
-import { ticketApi } from "@/shared/lib/api-client"
-
-type Step = "selection" | "billing" | "success"
-
-interface BillingForm {
-  name: string
-  cardNumber: string
-  expiry: string
-  cvv: string
+export interface TicketPdfDetail {
+  categoryName: string;
+  eventName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
 }
 
-interface PurchaseDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  eventId: string
-  eventName: string
-  onRequestLogin?: () => void
+export interface TicketPdfData {
+  qrCode: string;
+  saleDate: Date;
+  total: number;
+  details: TicketPdfDetail[];
 }
 
-function formatCardNumber(value: string) {
-  return value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim()
-}
+const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' });
 
-function formatExpiry(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 4)
-  if (digits.length >= 3) return digits.slice(0, 2) + "/" + digits.slice(2)
-  return digits
-}
+export async function generateTicketPdf(data: TicketPdfData): Promise<Buffer> {
+  const qrBuffer = await generateQRBuffer(data.qrCode);
 
-export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onRequestLogin }: PurchaseDialogProps) {
-  const { isAuthenticated } = useAuth()
-  const { data: entries = [], isLoading } = useTicketEntries(open ? eventId : null)
-  const { data: ticketCategories = [] } = useTicketCategories()
-  const purchase = usePurchaseTickets()
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const chunks: Buffer[] = [];
 
-  const [step, setStep] = useState<Step>("selection")
-  const [quantities, setQuantities] = useState<Record<string, number>>({})
-  const [billing, setBilling] = useState<BillingForm>({ name: "", cardNumber: "", expiry: "", cvv: "" })
-  const [billingErrors, setBillingErrors] = useState<Partial<BillingForm>>({})
-  const [purchasedQR, setPurchasedQR] = useState<string | null>(null)
-  const [purchasedId, setPurchasedId] = useState<number | null>(null)
-  const [isDownloading, setIsDownloading] = useState(false)
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
 
-  const getCategoryName = (ticketCategoryId: string) =>
-    ticketCategories.find((c) => c.id === ticketCategoryId)?.name ?? "Boleta"
+    // ── Header ──────────────────────────────────────────────────────
+    doc.fontSize(22).font('Helvetica-Bold').text('Boletas de Entrada', { align: 'center' });
+    doc.moveDown(0.4);
+    doc
+      .fontSize(10)
+      .font('Helvetica')
+      .fillColor('#6b7280')
+      .text(
+        `Fecha de compra: ${data.saleDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        { align: 'center' },
+      );
+    doc.fillColor('#000000');
 
-  const updateQuantity = (entradaId: string, delta: number, max: number) => {
-    setQuantities((prev) => {
-      const current = prev[entradaId] ?? 0
-      const next = Math.min(max, Math.max(0, current + delta))
-      return { ...prev, [entradaId]: next }
-    })
-  }
+    doc.moveDown(1);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e5e7eb').lineWidth(1).stroke();
+    doc.moveDown(1);
 
-  const total = entries.reduce((sum, entry) => {
-    const qty = quantities[entry.id] ?? 0
-    return sum + qty * entry.price
-  }, 0)
+    // ── Detalle de boletas ───────────────────────────────────────────
+    doc.fontSize(13).font('Helvetica-Bold').text('Detalle de boletas');
+    doc.moveDown(0.5);
 
-  const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0)
+    // Table header
+    const col = { cat: 50, event: 180, qty: 350, unit: 400, sub: 470 };
+    doc
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .fillColor('#374151')
+      .text('Categoría', col.cat, doc.y, { width: 120 })
+      .text('Evento', col.event, doc.y - doc.currentLineHeight(), { width: 160 })
+      .text('Cant.', col.qty, doc.y - doc.currentLineHeight(), { width: 45, align: 'right' })
+      .text('P. Unit.', col.unit, doc.y - doc.currentLineHeight(), { width: 65, align: 'right' })
+      .text('Subtotal', col.sub, doc.y - doc.currentLineHeight(), { width: 75, align: 'right' });
 
-  const formattedTotal = new Intl.NumberFormat("es-ES", { style: "currency", currency: "COP" }).format(total)
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#d1d5db').lineWidth(0.5).stroke();
+    doc.moveDown(0.3);
 
-  const handleClose = (o: boolean) => {
-    onOpenChange(o)
-    if (!o) {
-      setStep("selection")
-      setQuantities({})
-      setBilling({ name: "", cardNumber: "", expiry: "", cvv: "" })
-      setBillingErrors({})
-      setPurchasedQR(null)
-      setPurchasedId(null)
+    // Table rows
+    doc.font('Helvetica').fillColor('#000000').fontSize(9);
+    for (const d of data.details) {
+      const y = doc.y;
+      doc.text(d.categoryName, col.cat, y, { width: 120 });
+      doc.text(d.eventName, col.event, y, { width: 160 });
+      doc.text(String(d.quantity), col.qty, y, { width: 45, align: 'right' });
+      doc.text(COP.format(d.unitPrice), col.unit, y, { width: 65, align: 'right' });
+      doc.text(COP.format(d.subtotal), col.sub, y, { width: 75, align: 'right' });
+      doc.moveDown(0.6);
     }
-  }
 
-  const handleGoToBilling = () => {
-    if (!isAuthenticated) {
-      onOpenChange(false)
-      onRequestLogin?.()
-      return
-    }
-    setStep("billing")
-  }
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e5e7eb').lineWidth(1).stroke();
+    doc.moveDown(0.5);
 
-  const validateBilling = (): boolean => {
-    const errors: Partial<BillingForm> = {}
-    if (!billing.name.trim()) errors.name = "Requerido"
-    const digits = billing.cardNumber.replace(/\s/g, "")
-    if (digits.length !== 16) errors.cardNumber = "16 dígitos requeridos"
-    if (!/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = "Formato MM/AA"
-    if (billing.cvv.length < 3) errors.cvv = "Requerido"
-    setBillingErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+    // Total
+    doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text(`Total: ${COP.format(data.total)}`, { align: 'right' });
 
-  const handlePurchase = async () => {
-    if (!validateBilling()) return
+    doc.moveDown(2);
 
-    const items = entries
-      .filter((e) => (quantities[e.id] ?? 0) > 0)
-      .map((e) => ({ eventoEntradaId: Number(e.id), cantidad: quantities[e.id] }))
+    // ── QR Code ─────────────────────────────────────────────────────
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e5e7eb').lineWidth(1).stroke();
+    doc.moveDown(1);
 
-    const result = await purchase.mutateAsync(items).catch(() => null)
-    if (result) {
-      setPurchasedQR(result.codigoQR)
-      setPurchasedId(result.id)
-      setStep("success")
-    }
-  }
+    const qrX = (595 - 150) / 2;
+    doc.image(qrBuffer, qrX, doc.y, { width: 150, height: 150 });
+    doc.moveDown(0.3);
+    doc.y += 150;
 
-  const handleDownloadPdf = async () => {
-    if (purchasedId == null) return
-    setIsDownloading(true)
-    try {
-      const blob = await ticketApi.downloadPdf(purchasedId)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `boletas-${purchasedId}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    } finally {
-      setIsDownloading(false)
-    }
-  }
+    doc.moveDown(0.5);
+    doc
+      .fontSize(8)
+      .font('Helvetica')
+      .fillColor('#6b7280')
+      .text('Código de verificación', { align: 'center' });
+    doc.moveDown(0.2);
+    doc
+      .fontSize(7)
+      .font('Helvetica')
+      .text(data.qrCode, { align: 'center' });
 
-  const stepTitles: Record<Step, string> = {
-    selection: "Comprar boletas",
-    billing: "Datos de pago",
-    success: "¡Compra exitosa!",
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {step === "billing" && (
-              <button onClick={() => setStep("selection")} className="mr-1 text-muted-foreground hover:text-foreground">
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-            )}
-            {step === "selection" && <Ticket className="h-5 w-5 text-primary" />}
-            {step === "billing" && <CreditCard className="h-5 w-5 text-primary" />}
-            {step === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
-            {stepTitles[step]}
-          </DialogTitle>
-          {step !== "success" && (
-            <DialogDescription className="line-clamp-1">{eventName}</DialogDescription>
-          )}
-        </DialogHeader>
-
-        {/* ── Step 1: Selección ── */}
-        {step === "selection" && (
-          <>
-            <div className="flex flex-col gap-3 py-2">
-              {isLoading ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-                  Cargando boletas...
-                </div>
-              ) : entries.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-                  No hay boletas disponibles para este evento.
-                </div>
-              ) : (
-                entries.map((entry) => {
-                  const qty = quantities[entry.id] ?? 0
-                  const available = entry.availableQuantity
-                  const formattedPrice = new Intl.NumberFormat("es-ES", { style: "currency", currency: "COP" }).format(entry.price)
-                  return (
-                    <div key={entry.id} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium">{getCategoryName(entry.ticketCategoryId)}</span>
-                        <span className="text-xs text-muted-foreground">{formattedPrice} · {available} disponibles</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty === 0} onClick={() => updateQuantity(entry.id, -1, available)}>
-                          <Minus className="h-3.5 w-3.5" />
-                        </Button>
-                        <span className="w-5 text-center text-sm tabular-nums">{qty}</span>
-                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" disabled={qty >= available} onClick={() => updateQuantity(entry.id, 1, available)}>
-                          <Plus className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-
-            {entries.length > 0 && (
-              <>
-                <Separator />
-                <div className="flex items-center justify-between px-1 text-sm">
-                  <span className="text-muted-foreground">{totalItems} {totalItems === 1 ? "boleta" : "boletas"}</span>
-                  <span className="font-semibold text-foreground">{formattedTotal}</span>
-                </div>
-              </>
-            )}
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
-              <Button
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={totalItems === 0}
-                onClick={handleGoToBilling}
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Comprar
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-
-        {/* ── Step 2: Facturación simulada ── */}
-        {step === "billing" && (
-          <>
-            <div className="flex flex-col gap-4 py-2">
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                <Lock className="h-3.5 w-3.5 shrink-0" />
-                Simulación de pago — ningún dato es procesado ni almacenado
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Nombre en la tarjeta</Label>
-                <Input
-                  placeholder="Juan Pérez"
-                  value={billing.name}
-                  onChange={(e) => setBilling((b) => ({ ...b, name: e.target.value }))}
-                  className={billingErrors.name ? "border-destructive" : ""}
-                />
-                {billingErrors.name && <p className="text-xs text-destructive">{billingErrors.name}</p>}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Número de tarjeta</Label>
-                <Input
-                  placeholder="1234 5678 9012 3456"
-                  value={billing.cardNumber}
-                  onChange={(e) => setBilling((b) => ({ ...b, cardNumber: formatCardNumber(e.target.value) }))}
-                  className={billingErrors.cardNumber ? "border-destructive" : ""}
-                />
-                {billingErrors.cardNumber && <p className="text-xs text-destructive">{billingErrors.cardNumber}</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">Vencimiento</Label>
-                  <Input
-                    placeholder="MM/AA"
-                    value={billing.expiry}
-                    onChange={(e) => setBilling((b) => ({ ...b, expiry: formatExpiry(e.target.value) }))}
-                    className={billingErrors.expiry ? "border-destructive" : ""}
-                  />
-                  {billingErrors.expiry && <p className="text-xs text-destructive">{billingErrors.expiry}</p>}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">CVV</Label>
-                  <Input
-                    placeholder="123"
-                    maxLength={4}
-                    value={billing.cvv}
-                    onChange={(e) => setBilling((b) => ({ ...b, cvv: e.target.value.replace(/\D/g, "") }))}
-                    className={billingErrors.cvv ? "border-destructive" : ""}
-                  />
-                  {billingErrors.cvv && <p className="text-xs text-destructive">{billingErrors.cvv}</p>}
-                </div>
-              </div>
-
-              <Separator />
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total a pagar</span>
-                <span className="font-bold text-foreground">{formattedTotal}</span>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStep("selection")}>Volver</Button>
-              <Button
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={purchase.isPending}
-                onClick={handlePurchase}
-              >
-                <CreditCard className="h-4 w-4" />
-                {purchase.isPending ? "Procesando..." : "Pagar"}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-
-        {/* ── Step 3: Éxito ── */}
-        {step === "success" && (
-          <div className="flex flex-col items-center gap-4 py-4 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
-            <div>
-              <p className="text-base font-semibold text-foreground">¡Pago completado!</p>
-              <p className="mt-1 text-sm text-muted-foreground">Tus boletas han sido generadas</p>
-            </div>
-            <Button
-              className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={isDownloading}
-              onClick={handleDownloadPdf}
-            >
-              <Download className="h-4 w-4" />
-              {isDownloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => handleClose(false)}>
-              Cerrar
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  )
+    doc.end();
+  });
 }

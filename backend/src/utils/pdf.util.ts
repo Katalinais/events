@@ -4,22 +4,22 @@ import { generateQRBuffer } from './qr.util';
 export interface TicketPdfDetail {
   categoryName: string;
   eventName: string;
-  cantidad: number;
-  precioUnitario: number;
+  quantity: number;
+  unitPrice: number;
   subtotal: number;
 }
 
 export interface TicketPdfData {
-  codigoQR: string;
-  fechaVenta: Date;
+  qrCode: string;
+  saleDate: Date;
   total: number;
-  detalles: TicketPdfDetail[];
+  details: TicketPdfDetail[];
 }
 
 const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' });
 
 export async function generateTicketPdf(data: TicketPdfData): Promise<Buffer> {
-  const qrBuffer = await generateQRBuffer(data.codigoQR);
+  const qrBuffer = await generateQRBuffer(data.qrCode);
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -37,7 +37,7 @@ export async function generateTicketPdf(data: TicketPdfData): Promise<Buffer> {
       .font('Helvetica')
       .fillColor('#6b7280')
       .text(
-        `Fecha de compra: ${data.fechaVenta.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        `Fecha de compra: ${data.saleDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`,
         { align: 'center' },
       );
     doc.fillColor('#000000');
@@ -68,12 +68,12 @@ export async function generateTicketPdf(data: TicketPdfData): Promise<Buffer> {
 
     // Table rows
     doc.font('Helvetica').fillColor('#000000').fontSize(9);
-    for (const d of data.detalles) {
+    for (const d of data.details) {
       const y = doc.y;
       doc.text(d.categoryName, col.cat, y, { width: 120 });
       doc.text(d.eventName, col.event, y, { width: 160 });
-      doc.text(String(d.cantidad), col.qty, y, { width: 45, align: 'right' });
-      doc.text(COP.format(d.precioUnitario), col.unit, y, { width: 65, align: 'right' });
+      doc.text(String(d.quantity), col.qty, y, { width: 45, align: 'right' });
+      doc.text(COP.format(d.unitPrice), col.unit, y, { width: 65, align: 'right' });
       doc.text(COP.format(d.subtotal), col.sub, y, { width: 75, align: 'right' });
       doc.moveDown(0.6);
     }
@@ -109,7 +109,7 @@ export async function generateTicketPdf(data: TicketPdfData): Promise<Buffer> {
     doc
       .fontSize(7)
       .font('Helvetica')
-      .text(data.codigoQR, { align: 'center' });
+      .text(data.qrCode, { align: 'center' });
 
     doc.end();
   });

@@ -6,34 +6,34 @@ import type { EventoEntrada, Venta } from '@prisma/client';
 export class TicketRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findEventoEntradaById(id: number) {
+  findTicketEntryById(id: number) {
     return this.prisma.eventoEntrada.findFirst({
       where: { id },
       include: { evento: { select: { estado: true } } },
     });
   }
 
-  decrementDisponible(eventoEntradaId: number, cantidad: number): Promise<EventoEntrada> {
+  decrementAvailable(ticketEntryId: number, quantity: number): Promise<EventoEntrada> {
     return this.prisma.eventoEntrada.update({
-      where: { id: eventoEntradaId },
-      data: { cantidadDisponible: { decrement: cantidad } },
+      where: { id: ticketEntryId },
+      data: { cantidadDisponible: { decrement: quantity } },
     });
   }
 
   createTicketWithDetails(
-    usuarioId: number,
+    userId: number,
     total: number,
-    items: { eventoEntradaId: number; cantidad: number; precioUnitario: number; subtotal: number }[],
+    items: { eventEntryId: number; quantity: number; unitPrice: number; subtotal: number }[],
   ): Promise<Venta> {
     return this.prisma.venta.create({
       data: {
-        usuarioId,
+        usuarioId: userId,
         total,
         detalles: {
           create: items.map((item) => ({
-            eventoEntradaId: item.eventoEntradaId,
-            cantidad: item.cantidad,
-            precioUnitario: item.precioUnitario,
+            eventoEntradaId: item.eventEntryId,
+            cantidad: item.quantity,
+            precioUnitario: item.unitPrice,
             subtotal: item.subtotal,
           })),
         },
@@ -70,9 +70,9 @@ export class TicketRepository {
     return result._sum.total ?? 0;
   }
 
-  findTicketsByUser(usuarioId: number) {
+  findTicketsByUser(userId: number) {
     return this.prisma.venta.findMany({
-      where: { usuarioId },
+      where: { usuarioId: userId },
       orderBy: { fechaVenta: 'desc' },
       include: {
         detalles: {

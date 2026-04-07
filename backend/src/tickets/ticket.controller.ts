@@ -30,7 +30,7 @@ export class TicketController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('Debes iniciar sesión para comprar boletas');
+      throw new BadRequestException('You must be logged in to purchase tickets');
     }
     return this.ticketService.create(userId, createTicketDto);
   }
@@ -45,7 +45,7 @@ export class TicketController {
   findMyTickets(@Req() req: Request & { user?: { userId: number } }) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('Debes iniciar sesión para ver tus compras');
+      throw new BadRequestException('You must be logged in to view your purchases');
     }
     return this.ticketService.findByUser(userId);
   }
@@ -58,7 +58,7 @@ export class TicketController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('Debes iniciar sesión para descargar el PDF');
+      throw new BadRequestException('You must be logged in to download the PDF');
     }
     const buffer = await this.ticketService.generatePdf(id, userId);
     res.set({

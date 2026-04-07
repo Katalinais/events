@@ -497,8 +497,8 @@ export interface BackendTicketPurchase {
 }
 
 export interface TicketPurchaseItem {
-  eventoEntradaId: number;
-  cantidad: number;
+  eventEntryId: number;
+  quantity: number;
 }
 
 export const ticketApi = {
@@ -506,7 +506,7 @@ export const ticketApi = {
     const response = await fetch(`${API_BASE_URL}/tickets/total-earnings`, {
       headers: { ...getAuthHeaders() },
     })
-    if (!response.ok) throw new Error('Error al obtener ganancias')
+    if (!response.ok) throw new Error('Error fetching total earnings')
     const data: { total: number } = await response.json()
     return data.total
   },
@@ -519,7 +519,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al realizar la compra');
+      throw new Error(err.message || 'Error processing purchase');
     }
     return response.json();
   },
@@ -530,7 +530,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al obtener tus compras');
+      throw new Error(err.message || 'Error fetching your purchases');
     }
     return response.json();
   },
@@ -541,7 +541,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al descargar el PDF');
+      throw new Error(err.message || 'Error downloading PDF');
     }
     return response.blob();
   },

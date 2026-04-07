@@ -13,51 +13,51 @@ export class TicketService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async create(usuarioId: number, dto: CreateTicketDto) {
-    const resolvedItems: {
-      eventoEntradaId: number;
-      cantidad: number;
-      precioUnitario: number;
+  async create(userId: number, dto: CreateTicketDto) {
+    const purchaseItems: {
+      eventEntryId: number;
+      quantity: number;
+      unitPrice: number;
       subtotal: number;
     }[] = [];
 
     for (const item of dto.items) {
-      const entrada = await this.ticketRepository.findEventoEntradaById(item.eventoEntradaId);
+      const entry = await this.ticketRepository.findTicketEntryById(item.eventEntryId);
 
-      if (!entrada) {
+      if (!entry) {
         throw new BadRequestException(
-          `Entrada con ID ${item.eventoEntradaId} no encontrada`,
+          `Ticket entry with ID ${item.eventEntryId} not found`,
         );
       }
 
-      if (entrada.evento.estado !== EstadoEvento.ACTIVO) {
+      if (entry.evento.estado !== EstadoEvento.ACTIVO) {
         throw new BadRequestException(
-          'No se pueden comprar boletas para un evento que ya ha finalizado',
+          'Cannot purchase tickets for an event that has already ended',
         );
       }
 
-      if (entrada.cantidadDisponible < item.cantidad) {
+      if (entry.cantidadDisponible < item.quantity) {
         throw new BadRequestException(
-          `No hay suficientes boletas disponibles para la entrada ID ${item.eventoEntradaId}. Disponibles: ${entrada.cantidadDisponible}`,
+          `Not enough tickets available for entry ID ${item.eventEntryId}. Available: ${entry.cantidadDisponible}`,
         );
       }
 
-      const subtotal = entrada.precio * item.cantidad;
-      resolvedItems.push({
-        eventoEntradaId: item.eventoEntradaId,
-        cantidad: item.cantidad,
-        precioUnitario: entrada.precio,
+      const subtotal = entry.precio * item.quantity;
+      purchaseItems.push({
+        eventEntryId: item.eventEntryId,
+        quantity: item.quantity,
+        unitPrice: entry.precio,
         subtotal,
       });
     }
 
-    const total = resolvedItems.reduce((sum, i) => sum + i.subtotal, 0);
+    const total = purchaseItems.reduce((sum, i) => sum + i.subtotal, 0);
 
-    for (const item of resolvedItems) {
-      await this.ticketRepository.decrementDisponible(item.eventoEntradaId, item.cantidad);
+    for (const item of purchaseItems) {
+      await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);
     }
 
-    const result = await this.ticketRepository.createTicketWithDetails(usuarioId, total, resolvedItems);
+    const result = await this.ticketRepository.createTicketWithDetails(userId, total, purchaseItems);
     this.cacheService.invalidate(TOP_SELLING_CACHE_KEY);
     return result;
   }
@@ -66,30 +66,30 @@ export class TicketService {
     return this.ticketRepository.getTotalEarnings();
   }
 
-  findByUser(usuarioId: number) {
-    return this.ticketRepository.findTicketsByUser(usuarioId);
+  findByUser(userId: number) {
+    return this.ticketRepository.findTicketsByUser(userId);
   }
 
-  async generatePdf(ticketId: number, usuarioId: number): Promise<Buffer> {
-    const venta = await this.ticketRepository.findTicketById(ticketId);
+  async generatePdf(ticketId: number, userId: number): Promise<Buffer> {
+    const ticket = await this.ticketRepository.findTicketById(ticketId);
 
-    if (!venta) {
-      throw new NotFoundException(`Compra con ID ${ticketId} no encontrada`);
+    if (!ticket) {
+      throw new NotFoundException(`Purchase with ID ${ticketId} not found`);
     }
 
-    if (venta.usuarioId !== usuarioId) {
-      throw new NotFoundException(`Compra con ID ${ticketId} no encontrada`);
+    if (ticket.usuarioId !== userId) {
+      throw new NotFoundException(`Purchase with ID ${ticketId} not found`);
     }
 
     return generateTicketPdf({
-      codigoQR: venta.codigoQR,
-      fechaVenta: venta.fechaVenta,
-      total: venta.total,
-      detalles: venta.detalles.map((d) => ({
+      qrCode: ticket.codigoQR,
+      saleDate: ticket.fechaVenta,
+      total: ticket.total,
+      details: ticket.detalles.map((d) => ({
         categoryName: d.eventoEntrada.categoriaEntrada.nombre,
         eventName: d.eventoEntrada.evento.nombre,
-        cantidad: d.cantidad,
-        precioUnitario: d.precioUnitario,
+        quantity: d.cantidad,
+        unitPrice: d.precioUnitario,
         subtotal: d.subtotal,
       })),
     });
