@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { CalendarDays, Heart, History, LayoutDashboard, LogIn, LogOut } from "lucide-react"
 import { useAuth } from "@/shared/providers/auth-context"
 import { Button } from "@/shared/components/ui/button"
@@ -12,7 +13,7 @@ interface PublicNavbarProps {
   onLogoClick?: () => void
 }
 
-export function PublicNavbar({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
+function PublicNavbarInner({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
   const { isAuthenticated, user, logout } = useAuth()
   const isAdmin = user?.role === "ADMINISTRADOR"
   const pathname = usePathname()
@@ -101,5 +102,13 @@ export function PublicNavbar({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
         )
       }
     />
+  )
+}
+
+export function PublicNavbar(props: PublicNavbarProps) {
+  return (
+    <Suspense>
+      <PublicNavbarInner {...props} />
+    </Suspense>
   )
 }
