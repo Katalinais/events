@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, CalendarDays, LayoutDashboard, LogOut, Tag, Ticket, Users } from "lucide-react"
+import { BarChart3, CalendarDays, Home, LayoutDashboard, LogOut, Tag, Ticket, Users } from "lucide-react"
 import { useAuth } from "@/shared/providers/auth-context"
 import { Button } from "@/shared/components/ui/button"
 import { AppNavbar, type AppNavbarItem } from "@/shared/components/app-navbar"
@@ -14,6 +14,13 @@ interface AdminNavbarProps {
 export function AdminNavbar({ currentView, onViewChange }: AdminNavbarProps) {
   const { logout } = useAuth()
   const items: AppNavbarItem[] = [
+    {
+      id: "home",
+      label: "Inicio",
+      icon: Home,
+      active: currentView === "home",
+      onClick: () => onViewChange("home"),
+    },
     {
       id: "gestion",
       label: "Gestión",
