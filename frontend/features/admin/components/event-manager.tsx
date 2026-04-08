@@ -56,7 +56,7 @@ import {
 } from "@/shared/components/ui/tooltip"
 import { Badge } from "@/shared/components/ui/badge"
 import { useEventContext } from "@/shared/providers/event-context"
-import { useAdminEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/shared/hooks/use-events"
+import { useAdminEvents, useAllEventsSalesSummary, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/shared/hooks/use-events"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { useTicketEntries, useSaveTicketEntries } from "@/shared/hooks/use-evento-entradas"
 import { uploadEventImage, type EventItem } from "@/shared/lib/api-client"
@@ -87,6 +87,10 @@ const defaultFormData: EventFormData = {
 export function EventManager() {
   const { categories, getCategoryName } = useEventContext()
   const { data: events = [] } = useAdminEvents()
+  const { data: salesSummary = [] } = useAllEventsSalesSummary()
+  const eventsWithSales = new Set(
+    salesSummary.filter((s) => s.totalTickets > 0).map((s) => String(s.eventId)),
+  )
   const { data: ticketCategories = [] } = useTicketCategories()
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
@@ -224,6 +228,7 @@ export function EventManager() {
         await deleteEvent.mutateAsync(deletingEvent.id)
         setDeletingEvent(null)
       } catch (error) {
+        setDeletingEvent(null)
       }
     }
   }
@@ -550,6 +555,7 @@ export function EventManager() {
                   month: "short",
                   year: "numeric",
                 })
+                const hasSales = eventsWithSales.has(event.id)
                 return (
                   <TableRow key={event.id}>
                     <TableCell className="hidden sm:table-cell">
@@ -604,17 +610,22 @@ export function EventManager() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => setDeletingEvent(event)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Eliminar evento</span>
-                              </Button>
+                              <span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
+                                  disabled={hasSales}
+                                  onClick={() => setDeletingEvent(event)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Eliminar evento</span>
+                                </Button>
+                              </span>
                             </TooltipTrigger>
-                            <TooltipContent>Eliminar</TooltipContent>
+                            <TooltipContent>
+                              {hasSales ? "Tiene entradas vendidas" : "Eliminar"}
+                            </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
