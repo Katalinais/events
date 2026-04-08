@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense } from "react"
-import { CalendarDays, Heart, History, LayoutDashboard, LogIn, LogOut } from "lucide-react"
+import { CalendarDays, Heart, LayoutDashboard, LogIn, LogOut, ShoppingBag } from "lucide-react"
 import { useAuth } from "@/shared/providers/auth-context"
 import { Button } from "@/shared/components/ui/button"
 import { usePathname } from "next/navigation"
@@ -31,13 +31,13 @@ function PublicNavbarInner({ onOpenLogin, onLogoClick }: PublicNavbarProps) {
       active: isEventsActive,
       href: pathname === "/user" && isAuthenticated && !isAdmin ? "/user?tab=events" : "/",
     },
-    {
+    ...(isAuthenticated && !isAdmin ? [{
       id: "past-events",
-      label: "Eventos pasados",
-      icon: History,
+      label: "Mis compras",
+      icon: ShoppingBag,
       active: pathname === "/past-events",
       href: "/past-events",
-    },
+    }] : []),
   ]
 
   if (isAuthenticated && !isAdmin) {

@@ -482,7 +482,7 @@ export interface BackendTicketDetail {
     categoriaEntradaId: number;
     precio: number;
     categoriaEntrada: { id: number; nombre: string };
-    evento: { id: number; nombre: string };
+    evento: { id: number; nombre: string; fecha: string; estado: string };
   };
 }
 
