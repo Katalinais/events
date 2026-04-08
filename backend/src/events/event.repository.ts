@@ -256,6 +256,12 @@ export class EventRepository {
     });
   }
 
+  countSoldTicketsByEventId(eventId: number): Promise<number> {
+    return this.prisma.detalleBoleta.count({
+      where: { eventoEntrada: { eventoId: eventId } },
+    });
+  }
+
   async saveTicketEntries(
     eventId: number,
     entries: { ticketCategoryId: number; totalQuantity: number; price: number }[],

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
@@ -101,6 +101,13 @@ export class EventService {
 
   async remove(id: number) {
     await this.findOne(id);
+
+    const soldCount = await this.eventRepository.countSoldTicketsByEventId(id);
+    if (soldCount > 0) {
+      throw new ConflictException(
+        `Cannot delete this event because ${soldCount} ${soldCount === 1 ? 'ticket has' : 'tickets have'} already been sold`,
+      );
+    }
 
     return this.eventRepository.softDeleteById(id);
   }
