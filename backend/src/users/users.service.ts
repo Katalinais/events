@@ -9,7 +9,7 @@ export class UsersService {
     const users = await this.userRepository.findManyNonAdminOrderedByCreatedDesc();
     return users.map((u) => ({
       ...u,
-      createdAt: u.createdAt.toISOString(),
+      createdAt: u.createdAt,
     }));
   }
 }
