@@ -1,12 +1,13 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../../prisma/prisma.service';
+import { TipoUsuario } from '@prisma/client';
+import { AuthRepository } from './auth.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
     private jwtService: JwtService,
   ) {}
 
@@ -19,30 +20,24 @@ export class AuthService {
   ) {
     const normalizedEmail = email?.trim().toLowerCase() || null;
     if (normalizedEmail) {
-      const existingByEmail = await this.prisma.usuario.findUnique({
-        where: { correo: normalizedEmail },
-      });
+      const existingByEmail = await this.authRepository.findUniqueByCorreo(normalizedEmail);
       if (existingByEmail) {
         throw new ConflictException('An account with this email already exists');
       }
     }
     const trimmedUsername = username.trim();
-    const existingByUsername = await this.prisma.usuario.findFirst({
-      where: { username: trimmedUsername },
-    });
+    const existingByUsername = await this.authRepository.findUniqueByUsername(trimmedUsername);
     if (existingByUsername) {
       throw new ConflictException('This username is already taken');
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.usuario.create({
-      data: {
-        nombre: firstName.trim(),
-        apellido: lastName?.trim() || null,
-        correo: normalizedEmail,
-        username: trimmedUsername,
-        password: hashedPassword,
-        tipo: 'EXTERNO',
-      },
+    const user = await this.authRepository.create({
+      nombre: firstName.trim(),
+      apellido: lastName?.trim() || null,
+      correo: normalizedEmail,
+      username: trimmedUsername,
+      password: hashedPassword,
+      tipo: TipoUsuario.EXTERNO,
     });
     const payload = { sub: user.id, email: user.correo ?? '', role: user.tipo };
     return {
@@ -58,9 +53,7 @@ export class AuthService {
 
   async login(username: string, password: string) {
     const trimmedUsername = username.trim();
-    const user = await this.prisma.usuario.findFirst({
-      where: { username: trimmedUsername },
-    });
+    const user = await this.authRepository.findUniqueByUsername(trimmedUsername);
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid username or password');
     }

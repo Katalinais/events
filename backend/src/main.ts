@@ -21,8 +21,13 @@ async function bootstrap() {
     }),
   );
 
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+  ].filter(Boolean);
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://192.168.137.108:3000',
+    origin: allowedOrigins,
     credentials: true,
   });
 
