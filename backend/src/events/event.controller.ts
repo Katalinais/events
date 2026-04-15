@@ -18,47 +18,26 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { SaveTicketEntriesDto } from './dto/save-ticket-entries.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
-const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_MIMES = /\.(jpe?g|png|gif|webp)$/i;
+import { UploadService } from '../upload/upload.service';
+import { createImageMulterOptions } from '../upload/upload.config';
 
 @Controller('events')
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(
+    private readonly eventService: EventService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Post('upload-image')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      limits: { fileSize: IMAGE_MAX_SIZE },
-      fileFilter: (_req, file, cb) => {
-        const ext = extname(file.originalname).toLowerCase();
-        if (!ALLOWED_MIMES.test(ext) && !file.mimetype?.match(/\/(jpeg|jpg|png|gif|webp)$/)) {
-          cb(new BadRequestException('Only image files are allowed (JPEG, PNG, GIF, WebP)'), false);
-          return;
-        }
-        cb(null, true);
-      },
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (_req, file, cb) => {
-          const ext = extname(file.originalname) || '.jpg';
-          cb(null, `event-${Date.now()}${ext}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('image', createImageMulterOptions({ prefix: 'event' })))
   uploadImage(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No image file was provided');
-    }
-    return { url: `/uploads/${file.filename}` };
+    this.uploadService.validateFile(file);
+    return this.uploadService.buildFileUrl(file.filename);
   }
 
   @Post()
