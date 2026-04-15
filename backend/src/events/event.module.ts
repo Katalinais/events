@@ -8,11 +8,12 @@ import { CategoryModule } from '../categories/category.module';
 import { TicketCategoryModule } from '../ticket-categories/ticket-category.module';
 import { CacheService } from '../shared/cache.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UploadService } from '../upload/upload.service';
 
 @Module({
   imports: [AuthModule, CategoryModule, TicketCategoryModule],
   controllers: [EventController],
-  providers: [EventService, EventRepository, EventStatusTask, CacheService, PrismaService],
+  providers: [EventService, EventRepository, EventStatusTask, CacheService, PrismaService, UploadService],
   exports: [EventService, CacheService],
 })
 export class EventModule {}
