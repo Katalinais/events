@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { eventApi, ticketApi, userApi, type EventItem } from "@/shared/lib/api-client"
-import { toast } from "sonner"
 
 export const eventKeys = {
   all: ['events'] as const,
@@ -115,23 +114,28 @@ export function useAdminUsers(options?: { enabled?: boolean }) {
   })
 }
 
-export function useCreateEvent() {
+interface MutationCallbacks {
+  onSuccess?: () => void
+  onError?: (error: Error) => void
+}
+
+export function useCreateEvent(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (event: Omit<EventItem, 'id' | 'interested'>) => 
+    mutationFn: (event: Omit<EventItem, 'id' | 'interested'>) =>
       eventApi.createEvent(event),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
-      toast.success('Evento creado correctamente')
+      callbacks?.onSuccess?.()
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear el evento')
+      callbacks?.onError?.(error)
     },
   })
 }
 
-export function useUpdateEvent() {
+export function useUpdateEvent(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -140,15 +144,15 @@ export function useUpdateEvent() {
     onSuccess: (data) => {
       queryClient.setQueryData(eventKeys.detail(data.id), data)
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
-      toast.success('Evento actualizado correctamente')
+      callbacks?.onSuccess?.()
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar el evento')
+      callbacks?.onError?.(error)
     },
   })
 }
 
-export function useDeleteEvent() {
+export function useDeleteEvent(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -156,10 +160,10 @@ export function useDeleteEvent() {
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: eventKeys.detail(id) })
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
-      toast.success('Evento eliminado correctamente')
+      callbacks?.onSuccess?.()
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar el evento')
+      callbacks?.onError?.(error)
     },
   })
 }
@@ -174,10 +178,6 @@ export function useMarkInterested() {
       queryClient.invalidateQueries({ queryKey: eventKeys.upcoming() })
       queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
       queryClient.invalidateQueries({ queryKey: eventKeys.report() })
-      toast.success('Has marcado tu interés en este evento')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al marcar interés')
     },
   })
 }
@@ -192,10 +192,6 @@ export function useUnmarkInterested() {
       queryClient.invalidateQueries({ queryKey: eventKeys.upcoming() })
       queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
       queryClient.invalidateQueries({ queryKey: eventKeys.report() })
-      toast.success('Has quitado este evento de tus favoritos')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al quitar de favoritos')
     },
   })
 }
