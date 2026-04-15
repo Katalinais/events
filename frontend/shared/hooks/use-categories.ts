@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { categoryApi, type CategoryItem } from "@/shared/lib/api-client"
-import { toast } from "sonner"
 
 export const categoryKeys = {
   all: ["categories"] as const,
@@ -16,45 +15,50 @@ export function useCategories() {
   })
 }
 
-export function useCreateCategory() {
+interface MutationCallbacks {
+  onSuccess?: () => void
+  onError?: (error: Error) => void
+}
+
+export function useCreateCategory(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (name: string) => categoryApi.createCategory(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
-      toast.success("Categoría creada correctamente")
+      callbacks?.onSuccess?.()
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al crear la categoría")
+      callbacks?.onError?.(error)
     },
   })
 }
 
-export function useUpdateCategory() {
+export function useUpdateCategory(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
       categoryApi.updateCategory(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
-      toast.success("Categoría actualizada correctamente")
+      callbacks?.onSuccess?.()
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al actualizar la categoría")
+      callbacks?.onError?.(error)
     },
   })
 }
 
-export function useDeleteCategory() {
+export function useDeleteCategory(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => categoryApi.deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
-      toast.success("Categoría eliminada correctamente")
+      callbacks?.onSuccess?.()
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al eliminar la categoría")
+      callbacks?.onError?.(error)
     },
   })
 }
