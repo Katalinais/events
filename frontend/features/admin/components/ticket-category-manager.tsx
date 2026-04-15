@@ -1,6 +1,7 @@
 "use client"
 
   import { useCallback } from "react"
+  import { toast } from "sonner"
   import {
     useTicketCategories,
     useCreateTicketCategory,
@@ -12,9 +13,18 @@
 
   export function TicketCategoryManager() {
     const { data: items = [] } = useTicketCategories()
-    const createMutation = useCreateTicketCategory()
-    const updateMutation = useUpdateTicketCategory()
-    const deleteMutation = useDeleteTicketCategory()
+    const createMutation = useCreateTicketCategory({
+      onSuccess: () => toast.success("Categoría de boleta creada correctamente"),
+      onError: (error) => toast.error(error.message || "Error al crear la categoría de boleta"),
+    })
+    const updateMutation = useUpdateTicketCategory({
+      onSuccess: () => toast.success("Categoría de boleta actualizada correctamente"),
+      onError: (error) => toast.error(error.message || "Error al actualizar la categoría de boleta"),
+    })
+    const deleteMutation = useDeleteTicketCategory({
+      onSuccess: () => toast.success("Categoría de boleta eliminada correctamente"),
+      onError: (error) => toast.error(error.message || "Error al eliminar la categoría de boleta"),
+    })
 
     const getSoldCount = (id: string) =>
       (items as TicketCategoryItem[]).find((i) => i.id === id)?.soldCount ?? 0
