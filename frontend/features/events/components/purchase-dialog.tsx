@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download, CreditCard, Lock, ChevronLeft } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -51,7 +52,9 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const { isAuthenticated } = useAuth()
   const { data: entries = [], isLoading } = useTicketEntries(open ? eventId : null)
   const { data: ticketCategories = [] } = useTicketCategories()
-  const purchase = usePurchaseTickets()
+  const purchase = usePurchaseTickets({
+    onError: (error) => toast.error(error.message || "Error processing purchase"),
+  })
 
   const [step, setStep] = useState<Step>("selection")
   const [quantities, setQuantities] = useState<Record<string, number>>({})
@@ -125,6 +128,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
       setPurchasedQR(result.codigoQR)
       setPurchasedId(result.id)
       setStep("success")
+      toast.success("¡Compra realizada con éxito!")
     }
   }
 
