@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useCallback } from "react"
+import { toast } from "sonner"
 import type { Category } from "@/shared/lib/store"
 import { useAdminEvents } from "@/shared/hooks/use-events"
 import {
@@ -24,9 +25,18 @@ const EventContext = createContext<EventContextType | undefined>(undefined)
 export function EventProvider({ children }: { children: React.ReactNode }) {
   const { data: categories = [] } = useCategories()
   const { data: events = [] } = useAdminEvents()
-  const createCategory = useCreateCategory()
-  const updateCategoryMutation = useUpdateCategory()
-  const deleteCategoryMutation = useDeleteCategory()
+  const createCategory = useCreateCategory({
+    onSuccess: () => toast.success("Categoría creada correctamente"),
+    onError: (error) => toast.error(error.message || "Error al crear la categoría"),
+  })
+  const updateCategoryMutation = useUpdateCategory({
+    onSuccess: () => toast.success("Categoría actualizada correctamente"),
+    onError: (error) => toast.error(error.message || "Error al actualizar la categoría"),
+  })
+  const deleteCategoryMutation = useDeleteCategory({
+    onSuccess: () => toast.success("Categoría eliminada correctamente"),
+    onError: (error) => toast.error(error.message || "Error al eliminar la categoría"),
+  })
 
   const addCategory = useCallback(
     async (name: string) => {
