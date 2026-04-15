@@ -176,6 +176,7 @@ export function EventManager() {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
         imagePreviewUrlRef.current = null
       }
+      toast.success("Evento creado correctamente")
       setIsCreateOpen(false)
       setFormErrors({})
     } catch (error) {
@@ -213,6 +214,7 @@ export function EventManager() {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
         imagePreviewUrlRef.current = null
       }
+      toast.success("Evento actualizado correctamente")
       setFormErrors({})
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al actualizar el evento"
@@ -226,8 +228,11 @@ export function EventManager() {
     if (deletingEvent) {
       try {
         await deleteEvent.mutateAsync(deletingEvent.id)
+        toast.success("Evento eliminado correctamente")
         setDeletingEvent(null)
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Error al eliminar el evento"
+        toast.error(message)
         setDeletingEvent(null)
       }
     }

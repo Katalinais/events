@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useLayoutEffect, useEffect } from "react"
+import { toast } from "sonner"
 import Image from "next/image"
 import { CalendarDays, Heart, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
@@ -81,13 +82,17 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
       unmarkInterested.mutate(event.id, {
         onSuccess: () => {
           setIsFavorite(false)
+          toast.success("Has quitado este evento de tus favoritos")
         },
+        onError: (error) => toast.error(error.message || "Error al quitar de favoritos"),
       })
     } else {
       markInterested.mutate(event.id, {
         onSuccess: () => {
           setIsFavorite(true)
+          toast.success("Has marcado tu interés en este evento")
         },
+        onError: (error) => toast.error(error.message || "Error al marcar interés"),
       })
     }
   }
