@@ -37,9 +37,7 @@ export class EventRepository {
       eventTotals.set(entry.eventoId, prev + (r._sum.cantidad ?? 0));
     }
 
-    const sorted = [...eventTotals.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit);
+    const sorted = [...eventTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
 
     const events = await Promise.all(
       sorted.map(async ([eventId, totalSold]) => {

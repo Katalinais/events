@@ -13,7 +13,14 @@ import { UploadService } from '../upload/upload.service';
 @Module({
   imports: [AuthModule, CategoryModule, TicketCategoryModule],
   controllers: [EventController],
-  providers: [EventService, EventRepository, EventStatusTask, CacheService, PrismaService, UploadService],
+  providers: [
+    EventService,
+    EventRepository,
+    EventStatusTask,
+    CacheService,
+    PrismaService,
+    UploadService,
+  ],
   exports: [EventService, CacheService],
 })
 export class EventModule {}

@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
@@ -32,9 +38,7 @@ export class EventService {
 
   async create(createEventDto: CreateEventDto) {
     await this.ensureCategoryExists(createEventDto.categoryId);
-    const date = createEventDto.date?.trim()
-      ? new Date(createEventDto.date)
-      : new Date();
+    const date = createEventDto.date?.trim() ? new Date(createEventDto.date) : new Date();
     return this.eventRepository.create({
       nombre: createEventDto.name,
       descripcion: createEventDto.description,
@@ -153,9 +157,7 @@ export class EventService {
     await this.findOne(eventId);
 
     for (const entry of entries) {
-      const cat = await this.ticketCategoryRepository.findFirstActiveById(
-        entry.ticketCategoryId,
-      );
+      const cat = await this.ticketCategoryRepository.findFirstActiveById(entry.ticketCategoryId);
       if (!cat) {
         throw new BadRequestException(
           `Ticket category with ID ${entry.ticketCategoryId} not found`,

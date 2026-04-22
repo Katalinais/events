@@ -30,10 +30,7 @@ export class TicketCategoryController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateTicketCategoryDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTicketCategoryDto) {
     return this.ticketCategoryService.update(id, dto);
   }
 
