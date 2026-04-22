@@ -42,10 +42,7 @@ export class TicketCategoryRepository {
     });
   }
 
-  update(
-    id: number,
-    data: { nombre?: string; descripcion?: string },
-  ): Promise<CategoriaEntrada> {
+  update(id: number, data: { nombre?: string; descripcion?: string }): Promise<CategoriaEntrada> {
     return this.prisma.categoriaEntrada.update({ where: { id }, data });
   }
 

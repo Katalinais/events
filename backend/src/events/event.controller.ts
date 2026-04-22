@@ -135,10 +135,7 @@ export class EventController {
 
   @Post(':id/ticket-entries')
   @HttpCode(HttpStatus.OK)
-  saveTicketEntries(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: SaveTicketEntriesDto,
-  ) {
+  saveTicketEntries(@Param('id', ParseIntPipe) id: number, @Body() dto: SaveTicketEntriesDto) {
     return this.eventService.saveTicketEntries(id, dto.entries);
   }
 
@@ -148,10 +145,7 @@ export class EventController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateEventDto: UpdateEventDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateEventDto: UpdateEventDto) {
     return this.eventService.update(id, updateEventDto);
   }
 

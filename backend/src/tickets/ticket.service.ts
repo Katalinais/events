@@ -25,9 +25,7 @@ export class TicketService {
       const entry = await this.ticketRepository.findTicketEntryById(item.eventEntryId);
 
       if (!entry) {
-        throw new BadRequestException(
-          `Ticket entry with ID ${item.eventEntryId} not found`,
-        );
+        throw new BadRequestException(`Ticket entry with ID ${item.eventEntryId} not found`);
       }
 
       if (entry.evento.estado !== EstadoEvento.ACTIVO) {
@@ -57,7 +55,11 @@ export class TicketService {
       await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);
     }
 
-    const result = await this.ticketRepository.createTicketWithDetails(userId, total, purchaseItems);
+    const result = await this.ticketRepository.createTicketWithDetails(
+      userId,
+      total,
+      purchaseItems,
+    );
     this.cacheService.invalidate(TOP_SELLING_CACHE_KEY);
     return result;
   }
