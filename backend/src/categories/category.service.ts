@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryRepository } from './category.repository';
+import { CATEGORY_MESSAGES } from '../shared/messages';
 
 @Injectable()
 export class CategoryService {
@@ -11,7 +12,7 @@ export class CategoryService {
     const name = dto.name.trim();
     const existing = await this.categoryRepository.findActiveByNameInsensitive(name);
     if (existing) {
-      throw new ConflictException('A category with this name already exists');
+      throw new ConflictException(CATEGORY_MESSAGES.NAME_ALREADY_EXISTS);
     }
     return this.categoryRepository.create(name);
   }
@@ -23,7 +24,7 @@ export class CategoryService {
   async findOne(id: number) {
     const category = await this.categoryRepository.findFirstActiveById(id);
     if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException(CATEGORY_MESSAGES.NOT_FOUND(id));
     }
     return category;
   }
@@ -34,7 +35,7 @@ export class CategoryService {
       const name = dto.name.trim();
       const existing = await this.categoryRepository.findOtherActiveByNameInsensitive(name, id);
       if (existing) {
-        throw new ConflictException('A category with this name already exists');
+        throw new ConflictException(CATEGORY_MESSAGES.NAME_ALREADY_EXISTS);
       }
       return this.categoryRepository.update(id, { name });
     }
@@ -45,7 +46,7 @@ export class CategoryService {
     await this.findOne(id);
     const eventsWithCategory = await this.categoryRepository.countActiveEventsByCategoryId(id);
     if (eventsWithCategory > 0) {
-      throw new ConflictException('Cannot delete: this category has associated events');
+      throw new ConflictException(CATEGORY_MESSAGES.HAS_ASSOCIATED_EVENTS);
     }
     return this.categoryRepository.softDeleteById(id);
   }

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
+import { EVENT_MESSAGES } from '../shared/messages';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
@@ -26,7 +27,7 @@ export class EventService {
     if (categoryId == null) return;
     const cat = await this.categoryRepository.findFirstActiveById(categoryId);
     if (!cat) {
-      throw new BadRequestException(`Category with ID ${categoryId} not found`);
+      throw new BadRequestException(EVENT_MESSAGES.CATEGORY_NOT_FOUND(categoryId));
     }
   }
 
@@ -65,7 +66,7 @@ export class EventService {
     const event = await this.eventRepository.findFirstActiveByIdWithInteresadosCount(id);
 
     if (!event) {
-      throw new NotFoundException(`Event with ID ${id} not found`);
+      throw new NotFoundException(EVENT_MESSAGES.NOT_FOUND(id));
     }
 
     return event;
@@ -104,9 +105,7 @@ export class EventService {
 
     const soldCount = await this.eventRepository.countSoldTicketsByEventId(id);
     if (soldCount > 0) {
-      throw new ConflictException(
-        `Cannot delete this event because ${soldCount} ${soldCount === 1 ? 'ticket has' : 'tickets have'} already been sold`,
-      );
+      throw new ConflictException(EVENT_MESSAGES.CANNOT_DELETE_SOLD(soldCount));
     }
 
     return this.eventRepository.softDeleteById(id);
@@ -128,7 +127,7 @@ export class EventService {
 
   async markInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
     if (!userId) {
-      throw new BadRequestException('User not identified');
+      throw new BadRequestException(EVENT_MESSAGES.USER_NOT_IDENTIFIED);
     }
     await this.findOne(eventId);
 
@@ -157,9 +156,7 @@ export class EventService {
         entry.ticketCategoryId,
       );
       if (!cat) {
-        throw new BadRequestException(
-          `Ticket category with ID ${entry.ticketCategoryId} not found`,
-        );
+        throw new BadRequestException(EVENT_MESSAGES.TICKET_CATEGORY_NOT_FOUND(entry.ticketCategoryId));
       }
 
       const existing = await this.eventRepository.findTicketEntryByEventAndCategory(
@@ -169,9 +166,7 @@ export class EventService {
       if (existing) {
         const soldCount = existing.cantidadTotal - existing.cantidadDisponible;
         if (entry.totalQuantity < soldCount) {
-          throw new BadRequestException(
-            `Cannot set ${entry.totalQuantity} tickets for "${cat.nombre}" as ${soldCount} have already been sold`,
-          );
+          throw new BadRequestException(EVENT_MESSAGES.CANNOT_REDUCE_BELOW_SOLD(entry.totalQuantity, cat.nombre, soldCount));
         }
       }
     }
@@ -206,7 +201,7 @@ export class EventService {
 
   async unmarkInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
     if (!userId) {
-      throw new BadRequestException('User not identified');
+      throw new BadRequestException(EVENT_MESSAGES.USER_NOT_IDENTIFIED);
     }
     await this.findOne(eventId);
 

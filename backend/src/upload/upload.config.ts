@@ -3,6 +3,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import type { Options as MulterOptions } from 'multer';
 import { UPLOAD_DEFAULTS } from './upload.constants';
+import { UPLOAD_MESSAGES } from '../shared/messages';
 
 export interface ImageUploadConfig {
   /** Prefijo del nombre de archivo generado. Default: 'file' */
@@ -31,7 +32,7 @@ export function createImageMulterOptions(config?: ImageUploadConfig): MulterOpti
       const validExt = UPLOAD_DEFAULTS.ALLOWED_IMAGE_EXTS.test(ext);
       const validMime = UPLOAD_DEFAULTS.ALLOWED_IMAGE_MIMES.includes(file.mimetype);
       if (!validExt && !validMime) {
-        cb(new BadRequestException('Only image files are allowed (JPEG, PNG, GIF, WebP)'));
+        cb(new BadRequestException(UPLOAD_MESSAGES.INVALID_FILE_TYPE));
         return;
       }
       cb(null, true);

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { TipoUsuario } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
+import { AUTH_MESSAGES } from '../shared/messages';
 
 @Injectable()
 export class AuthService {
@@ -22,13 +23,13 @@ export class AuthService {
     if (normalizedEmail) {
       const existingByEmail = await this.authRepository.findUniqueByCorreo(normalizedEmail);
       if (existingByEmail) {
-        throw new ConflictException('An account with this email already exists');
+        throw new ConflictException(AUTH_MESSAGES.EMAIL_ALREADY_EXISTS);
       }
     }
     const trimmedUsername = username.trim();
     const existingByUsername = await this.authRepository.findUniqueByUsername(trimmedUsername);
     if (existingByUsername) {
-      throw new ConflictException('This username is already taken');
+      throw new ConflictException(AUTH_MESSAGES.USERNAME_ALREADY_TAKEN);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.authRepository.create({
@@ -55,11 +56,11 @@ export class AuthService {
     const trimmedUsername = username.trim();
     const user = await this.authRepository.findUniqueByUsername(trimmedUsername);
     if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid username or password');
+      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
     }
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      throw new UnauthorizedException('Invalid username or password');
+      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
     }
     const payload = { sub: user.id, email: user.correo, role: user.tipo };
     return {
