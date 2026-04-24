@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from './user.repository';
+import { mapUser } from '../utils/user.mapper';
 
 @Injectable()
 export class UsersService {
@@ -7,9 +8,6 @@ export class UsersService {
 
   async findAll() {
     const users = await this.userRepository.findManyNonAdminOrderedByCreatedDesc();
-    return users.map((u) => ({
-      ...u,
-      createdAt: u.createdAt.toISOString(),
-    }));
+    return users.map(mapUser);
   }
 }
