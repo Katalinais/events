@@ -5,7 +5,6 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { useAuth } from "@/shared/providers/auth-context"
-import { authApi } from "@/shared/lib/api-client"
 import { toast } from "sonner"
 import { AUTH_MESSAGES } from "@/shared/constants/messages"
 
@@ -16,7 +15,7 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFormProps) {
-  const { setSession } = useAuth()
+  const { register } = useAuth()
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -40,14 +39,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
     }
     setIsSubmitting(true)
     try {
-      const res = await authApi.register({
+      await register({
         firstName,
         lastName,
         ...(email.trim() && { email: email.trim() }),
         username,
         password,
       })
-      setSession(res.access_token, res.user)
       toast.success(AUTH_MESSAGES.REGISTER_SUCCESS)
       setPassword("")
       onSuccess?.()

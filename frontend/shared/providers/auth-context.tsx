@@ -8,11 +8,20 @@ import { eventKeys } from "@/shared/hooks/use-events"
 const TOKEN_KEY = "auth_token"
 const USER_KEY = "auth_user"
 
+interface RegisterData {
+  firstName: string
+  lastName?: string
+  email?: string
+  username: string
+  password: string
+}
+
 interface AuthContextType {
   user: AuthUser | null
   token: string | null
   isAuthenticated: boolean
   login: (username: string, password: string) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   setSession: (accessToken: string, user: AuthUser) => void
   logout: () => void
   isLoading: boolean
@@ -50,6 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
   }, [queryClient])
 
+  const register = useCallback(async (data: RegisterData) => {
+    const res = await authApi.register(data)
+    localStorage.setItem(TOKEN_KEY, res.access_token)
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user))
+    setToken(res.access_token)
+    setUser(res.user)
+    queryClient.invalidateQueries({ queryKey: eventKeys.favorites() })
+  }, [queryClient])
+
   const setSession = useCallback((accessToken: string, userData: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, accessToken)
     localStorage.setItem(USER_KEY, JSON.stringify(userData))
@@ -72,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         isAuthenticated: !!token,
         login,
+        register,
         setSession,
         logout,
         isLoading,
