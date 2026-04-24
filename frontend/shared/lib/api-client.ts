@@ -1,3 +1,11 @@
+import {
+  AUTH_MESSAGES,
+  EVENT_MESSAGES,
+  CATEGORY_MESSAGES,
+  TICKET_CATEGORY_MESSAGES,
+  TICKET_MESSAGES,
+} from '@/shared/constants/messages';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 const getAuthHeaders = (): Record<string, string> => {
@@ -103,7 +111,7 @@ export async function uploadEventImage(file: File): Promise<string> {
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || 'Error al subir la imagen');
+    throw new Error(error.message || EVENT_MESSAGES.API_UPLOAD_IMAGE_FAILED);
   }
   const data = await response.json();
   return data.url;
@@ -113,7 +121,7 @@ export const eventApi = {
   async getEvents(): Promise<EventItem[]> {
     const response = await fetch(`${API_BASE_URL}/events`);
     if (!response.ok) {
-      throw new Error('Error al obtener eventos');
+      throw new Error(EVENT_MESSAGES.API_FETCH_FAILED);
     }
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
@@ -122,7 +130,7 @@ export const eventApi = {
   async getEvent(id: string): Promise<EventItem> {
     const response = await fetch(`${API_BASE_URL}/events/${id}`);
     if (!response.ok) {
-      throw new Error('Error al obtener el evento');
+      throw new Error(EVENT_MESSAGES.API_FETCH_ONE_FAILED);
     }
     const evento: BackendEvento = await response.json();
     return mapBackendToFrontend(evento);
@@ -139,7 +147,7 @@ export const eventApi = {
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Error al crear el evento');
+      throw new Error(error.message || EVENT_MESSAGES.API_CREATE_FAILED);
     }
     const evento: BackendEvento = await response.json();
     return mapBackendToFrontend(evento);
@@ -169,7 +177,7 @@ export const eventApi = {
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Error al actualizar el evento');
+      throw new Error(error.message || EVENT_MESSAGES.API_UPDATE_FAILED);
     }
     const evento: BackendEvento = await response.json();
     return mapBackendToFrontend(evento);
@@ -181,7 +189,7 @@ export const eventApi = {
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Error al eliminar el evento');
+      throw new Error(error.message || EVENT_MESSAGES.API_DELETE_FAILED);
     }
   },
 
@@ -191,7 +199,7 @@ export const eventApi = {
       : `${API_BASE_URL}/events/upcoming`;
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error('Error al obtener próximos eventos');
+      throw new Error(EVENT_MESSAGES.API_FETCH_UPCOMING_FAILED);
     }
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
@@ -203,7 +211,7 @@ export const eventApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al obtener tus favoritos');
+      throw new Error(err.message || EVENT_MESSAGES.API_FETCH_FAVORITES_FAILED);
     }
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
@@ -213,7 +221,7 @@ export const eventApi = {
     const response = await fetch(`${API_BASE_URL}/events/sales-summary`, {
       headers: { ...getAuthHeaders() },
     })
-    if (!response.ok) throw new Error('Error fetching sales summary')
+    if (!response.ok) throw new Error(EVENT_MESSAGES.API_FETCH_SALES_SUMMARY_FAILED)
     return response.json()
   },
 
@@ -228,21 +236,21 @@ export const eventApi = {
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
-      throw new Error(err.message || 'Error fetching sales report')
+      throw new Error(err.message || EVENT_MESSAGES.API_FETCH_SALES_REPORT_FAILED)
     }
     return response.json()
   },
 
   async getTopSellingEvents(): Promise<(EventItem & { totalSold: number })[]> {
     const response = await fetch(`${API_BASE_URL}/events/top-selling`);
-    if (!response.ok) throw new Error('Error al obtener top eventos');
+    if (!response.ok) throw new Error(EVENT_MESSAGES.API_FETCH_TOP_SELLING_FAILED);
     const eventos: (BackendEvento & { totalSold: number })[] = await response.json();
     return eventos.map((e) => ({ ...mapBackendToFrontend(e), totalSold: e.totalSold }));
   },
 
   async getPastEvents(): Promise<EventItem[]> {
     const response = await fetch(`${API_BASE_URL}/events/past`);
-    if (!response.ok) throw new Error('Error al obtener eventos pasados');
+    if (!response.ok) throw new Error(EVENT_MESSAGES.API_FETCH_PAST_FAILED);
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
   },
@@ -251,7 +259,7 @@ export const eventApi = {
     const response = await fetch(`${API_BASE_URL}/events/admin`, {
       headers: { ...getAuthHeaders() },
     });
-    if (!response.ok) throw new Error('Error al obtener eventos');
+    if (!response.ok) throw new Error(EVENT_MESSAGES.API_FETCH_ADMIN_FAILED);
     const eventos: BackendEvento[] = await response.json();
     return eventos.map(mapBackendToFrontend);
   },
@@ -261,7 +269,7 @@ export const eventApi = {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
-      throw new Error('Error al obtener el reporte');
+      throw new Error(EVENT_MESSAGES.API_FETCH_REPORT_FAILED);
     }
     const eventos: BackendReportEvento[] = await response.json();
     return eventos.map((e) => ({
@@ -279,7 +287,7 @@ export const eventApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al marcar interés');
+      throw new Error(err.message || EVENT_MESSAGES.API_MARK_INTEREST_FAILED);
     }
     return response.json();
   },
@@ -291,7 +299,7 @@ export const eventApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al quitar de favoritos');
+      throw new Error(err.message || EVENT_MESSAGES.API_UNMARK_INTEREST_FAILED);
     }
     return response.json();
   },
@@ -309,7 +317,7 @@ export function mapCategoriaToFrontend(c: BackendCategoria): CategoryItem {
 export const categoryApi = {
   async getCategories(): Promise<CategoryItem[]> {
     const response = await fetch(`${API_BASE_URL}/categories`);
-    if (!response.ok) throw new Error('Error al obtener categorías');
+    if (!response.ok) throw new Error(CATEGORY_MESSAGES.API_FETCH_FAILED);
     const data: BackendCategoria[] = await response.json();
     return data.map(mapCategoriaToFrontend);
   },
@@ -322,7 +330,7 @@ export const categoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al crear la categoría');
+      throw new Error(err.message || CATEGORY_MESSAGES.API_CREATE_FAILED);
     }
     const data: BackendCategoria = await response.json();
     return mapCategoriaToFrontend(data);
@@ -336,7 +344,7 @@ export const categoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al actualizar la categoría');
+      throw new Error(err.message || CATEGORY_MESSAGES.API_UPDATE_FAILED);
     }
     const data: BackendCategoria = await response.json();
     return mapCategoriaToFrontend(data);
@@ -348,7 +356,7 @@ export const categoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al eliminar la categoría');
+      throw new Error(err.message || CATEGORY_MESSAGES.API_DELETE_FAILED);
     }
   },
 };
@@ -383,7 +391,7 @@ function mapTicketEntry(e: BackendEventoEntrada): TicketEntryItem {
 export const ticketEntriesApi = {
   async getTicketEntries(eventId: string): Promise<TicketEntryItem[]> {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-entries`)
-    if (!response.ok) throw new Error('Error fetching ticket entries for event')
+    if (!response.ok) throw new Error(TICKET_MESSAGES.API_FETCH_ENTRIES_FAILED)
     const data: BackendEventoEntrada[] = await response.json()
     return data.map(mapTicketEntry)
   },
@@ -399,7 +407,7 @@ export const ticketEntriesApi = {
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
-      throw new Error(err.message || 'Error saving ticket entries')
+      throw new Error(err.message || TICKET_MESSAGES.API_SAVE_ENTRIES_FAILED)
     }
     const data: BackendEventoEntrada[] = await response.json()
     return data.map(mapTicketEntry)
@@ -426,7 +434,7 @@ export function mapCategoriaEntradaToFrontend(c: BackendCategoriaEntrada): Ticke
 export const ticketCategoryApi = {
   async getTicketCategories(): Promise<TicketCategoryItem[]> {
     const response = await fetch(`${API_BASE_URL}/ticket-categories`);
-    if (!response.ok) throw new Error('Error fetching ticket categories');
+    if (!response.ok) throw new Error(TICKET_CATEGORY_MESSAGES.API_FETCH_FAILED);
     const data: BackendCategoriaEntrada[] = await response.json();
     return data.map(mapCategoriaEntradaToFrontend);
   },
@@ -439,7 +447,7 @@ export const ticketCategoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error creating ticket category');
+      throw new Error(err.message || TICKET_CATEGORY_MESSAGES.API_CREATE_FAILED);
     }
     const data: BackendCategoriaEntrada = await response.json();
     return mapCategoriaEntradaToFrontend(data);
@@ -453,7 +461,7 @@ export const ticketCategoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error updating ticket category');
+      throw new Error(err.message || TICKET_CATEGORY_MESSAGES.API_UPDATE_FAILED);
     }
     const data: BackendCategoriaEntrada = await response.json();
     return mapCategoriaEntradaToFrontend(data);
@@ -465,7 +473,7 @@ export const ticketCategoryApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error deleting ticket category');
+      throw new Error(err.message || TICKET_CATEGORY_MESSAGES.API_DELETE_FAILED);
     }
   },
 };
@@ -506,7 +514,7 @@ export const ticketApi = {
     const response = await fetch(`${API_BASE_URL}/tickets/total-earnings`, {
       headers: { ...getAuthHeaders() },
     })
-    if (!response.ok) throw new Error('Error fetching total earnings')
+    if (!response.ok) throw new Error(TICKET_MESSAGES.API_FETCH_TOTAL_EARNINGS_FAILED)
     const data: { total: number } = await response.json()
     return data.total
   },
@@ -519,7 +527,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error processing purchase');
+      throw new Error(err.message || TICKET_MESSAGES.API_PURCHASE_FAILED);
     }
     return response.json();
   },
@@ -530,7 +538,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error fetching your purchases');
+      throw new Error(err.message || TICKET_MESSAGES.API_FETCH_MY_TICKETS_FAILED);
     }
     return response.json();
   },
@@ -541,7 +549,7 @@ export const ticketApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Error downloading PDF');
+      throw new Error(err.message || TICKET_MESSAGES.API_DOWNLOAD_PDF_FAILED);
     }
     return response.blob();
   },
@@ -581,7 +589,7 @@ export const authApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Registration failed');
+      throw new Error(err.message || AUTH_MESSAGES.API_REGISTER_FAILED);
     }
     return response.json();
   },
@@ -594,7 +602,7 @@ export const authApi = {
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Invalid username or password');
+      throw new Error(err.message || AUTH_MESSAGES.API_LOGIN_FAILED);
     }
     return response.json();
   },
@@ -637,7 +645,7 @@ export const userApi = {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(
-        typeof err.message === 'string' ? err.message : 'Error fetching users'
+        typeof err.message === 'string' ? err.message : AUTH_MESSAGES.API_FETCH_USERS_FAILED
       );
     }
     const data: BackendAdminUser[] = await response.json();

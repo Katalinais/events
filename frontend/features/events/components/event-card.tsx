@@ -2,6 +2,7 @@
 
 import { useState, useRef, useLayoutEffect, useEffect } from "react"
 import { toast } from "sonner"
+import { EVENT_MESSAGES } from "@/shared/constants/messages"
 import Image from "next/image"
 import { CalendarDays, Heart, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
@@ -82,17 +83,17 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
       unmarkInterested.mutate(event.id, {
         onSuccess: () => {
           setIsFavorite(false)
-          toast.success("Has quitado este evento de tus favoritos")
+          toast.success(EVENT_MESSAGES.UNMARK_INTEREST_SUCCESS)
         },
-        onError: (error) => toast.error(error.message || "Error al quitar de favoritos"),
+        onError: (error) => toast.error(error.message || EVENT_MESSAGES.UNMARK_INTEREST_ERROR),
       })
     } else {
       markInterested.mutate(event.id, {
         onSuccess: () => {
           setIsFavorite(true)
-          toast.success("Has marcado tu interés en este evento")
+          toast.success(EVENT_MESSAGES.MARK_INTEREST_SUCCESS)
         },
-        onError: (error) => toast.error(error.message || "Error al marcar interés"),
+        onError: (error) => toast.error(error.message || EVENT_MESSAGES.MARK_INTEREST_ERROR),
       })
     }
   }

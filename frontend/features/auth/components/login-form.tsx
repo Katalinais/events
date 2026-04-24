@@ -6,6 +6,7 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { useAuth } from "@/shared/providers/auth-context"
 import { toast } from "sonner"
+import { AUTH_MESSAGES } from "@/shared/constants/messages"
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -22,17 +23,17 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!username.trim() || !password) {
-      toast.error("Ingresa usuario y contraseña")
+      toast.error(AUTH_MESSAGES.CREDENTIALS_REQUIRED)
       return
     }
     setIsSubmitting(true)
     try {
       await login(username, password)
-      toast.success("Sesión iniciada")
+      toast.success(AUTH_MESSAGES.LOGIN_SUCCESS)
       setPassword("")
       onSuccess?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al iniciar sesión")
+      toast.error(err instanceof Error ? err.message : AUTH_MESSAGES.LOGIN_ERROR)
     } finally {
       setIsSubmitting(false)
     }

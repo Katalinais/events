@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useCallback } from "react"
 import { toast } from "sonner"
+import { CATEGORY_MESSAGES } from "@/shared/constants/messages"
 import type { Category } from "@/shared/lib/store"
 import { useAdminEvents } from "@/shared/hooks/use-events"
 import {
@@ -26,16 +27,16 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   const { data: categories = [] } = useCategories()
   const { data: events = [] } = useAdminEvents()
   const createCategory = useCreateCategory({
-    onSuccess: () => toast.success("Categoría creada correctamente"),
-    onError: (error) => toast.error(error.message || "Error al crear la categoría"),
+    onSuccess: () => toast.success(CATEGORY_MESSAGES.CREATE_SUCCESS),
+    onError: (error) => toast.error(error.message || CATEGORY_MESSAGES.CREATE_ERROR),
   })
   const updateCategoryMutation = useUpdateCategory({
-    onSuccess: () => toast.success("Categoría actualizada correctamente"),
-    onError: (error) => toast.error(error.message || "Error al actualizar la categoría"),
+    onSuccess: () => toast.success(CATEGORY_MESSAGES.UPDATE_SUCCESS),
+    onError: (error) => toast.error(error.message || CATEGORY_MESSAGES.UPDATE_ERROR),
   })
   const deleteCategoryMutation = useDeleteCategory({
-    onSuccess: () => toast.success("Categoría eliminada correctamente"),
-    onError: (error) => toast.error(error.message || "Error al eliminar la categoría"),
+    onSuccess: () => toast.success(CATEGORY_MESSAGES.DELETE_SUCCESS),
+    onError: (error) => toast.error(error.message || CATEGORY_MESSAGES.DELETE_ERROR),
   })
 
   const addCategory = useCallback(

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
+import { TICKET_MESSAGES } from "@/shared/constants/messages"
 import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download, CreditCard, Lock, ChevronLeft } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -53,7 +54,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const { data: entries = [], isLoading } = useTicketEntries(open ? eventId : null)
   const { data: ticketCategories = [] } = useTicketCategories()
   const purchase = usePurchaseTickets({
-    onError: (error) => toast.error(error.message || "Error processing purchase"),
+    onError: (error) => toast.error(error.message || TICKET_MESSAGES.PURCHASE_ERROR),
   })
 
   const [step, setStep] = useState<Step>("selection")
@@ -107,11 +108,11 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
 
   const validateBilling = (): boolean => {
     const errors: Partial<BillingForm> = {}
-    if (!billing.name.trim()) errors.name = "Requerido"
+    if (!billing.name.trim()) errors.name = TICKET_MESSAGES.BILLING_NAME_REQUIRED
     const digits = billing.cardNumber.replace(/\s/g, "")
-    if (digits.length !== 16) errors.cardNumber = "16 dígitos requeridos"
-    if (!/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = "Formato MM/AA"
-    if (billing.cvv.length < 3) errors.cvv = "Requerido"
+    if (digits.length !== 16) errors.cardNumber = TICKET_MESSAGES.BILLING_CARD_LENGTH
+    if (!/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = TICKET_MESSAGES.BILLING_EXPIRY_FORMAT
+    if (billing.cvv.length < 3) errors.cvv = TICKET_MESSAGES.BILLING_CVV_REQUIRED
     setBillingErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -128,7 +129,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
       setPurchasedQR(result.codigoQR)
       setPurchasedId(result.id)
       setStep("success")
-      toast.success("¡Compra realizada con éxito!")
+      toast.success(TICKET_MESSAGES.PURCHASE_SUCCESS)
     }
   }
 

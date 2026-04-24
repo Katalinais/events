@@ -7,6 +7,7 @@ import { Label } from "@/shared/components/ui/label"
 import { useAuth } from "@/shared/providers/auth-context"
 import { authApi } from "@/shared/lib/api-client"
 import { toast } from "sonner"
+import { AUTH_MESSAGES } from "@/shared/constants/messages"
 
 interface RegisterFormProps {
   onSuccess?: () => void
@@ -26,15 +27,15 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!firstName.trim()) {
-      toast.error("El nombre es obligatorio")
+      toast.error(AUTH_MESSAGES.NAME_REQUIRED)
       return
     }
     if (!username.trim()) {
-      toast.error("El usuario es obligatorio")
+      toast.error(AUTH_MESSAGES.USERNAME_REQUIRED)
       return
     }
     if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres")
+      toast.error(AUTH_MESSAGES.PASSWORD_MIN_LENGTH)
       return
     }
     setIsSubmitting(true)
@@ -47,11 +48,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
         password,
       })
       setSession(res.access_token, res.user)
-      toast.success("Cuenta creada correctamente")
+      toast.success(AUTH_MESSAGES.REGISTER_SUCCESS)
       setPassword("")
       onSuccess?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al registrarse")
+      toast.error(err instanceof Error ? err.message : AUTH_MESSAGES.REGISTER_ERROR)
     } finally {
       setIsSubmitting(false)
     }

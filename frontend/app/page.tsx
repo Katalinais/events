@@ -10,6 +10,7 @@ import { LoginForm } from "@/features/auth/components/login-form"
 import { RegisterForm } from "@/features/auth/components/register-form"
 import { useAuth } from "@/shared/providers/auth-context"
 import { toast } from "sonner"
+import { AUTH_MESSAGES } from "@/shared/constants/messages"
 
 function HomeContent() {
   const searchParams = useSearchParams()
@@ -22,7 +23,7 @@ function HomeContent() {
   useEffect(() => {
     if (searchParams.get("login") === "1") setShowLogin(true)
     if (searchParams.get("unauthorized") === "1") {
-      toast.error("No tienes permiso para acceder al panel de administración")
+      toast.error(AUTH_MESSAGES.NO_ADMIN_PERMISSION)
     }
   }, [searchParams])
 
