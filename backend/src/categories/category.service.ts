@@ -42,6 +42,12 @@ export class CategoryService {
     return this.categoryRepository.update(id, {});
   }
 
+  async canDelete(id: number): Promise<{ canDelete: boolean }> {
+    await this.findOne(id);
+    const count = await this.categoryRepository.countActiveEventsByCategoryId(id);
+    return { canDelete: count === 0 };
+  }
+
   async remove(id: number) {
     await this.findOne(id);
     const eventsWithCategory = await this.categoryRepository.countActiveEventsByCategoryId(id);

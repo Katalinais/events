@@ -6,6 +6,7 @@ import { categoryApi, type CategoryItem } from "@/shared/lib/api-client"
 export const categoryKeys = {
   all: ["categories"] as const,
   lists: () => [...categoryKeys.all, "list"] as const,
+  canDelete: (id: string) => [...categoryKeys.all, id, "can-delete"] as const,
 }
 
 export function useCategories() {
