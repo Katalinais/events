@@ -359,6 +359,12 @@ export const categoryApi = {
       throw new Error(err.message || CATEGORY_MESSAGES.API_DELETE_FAILED);
     }
   },
+
+  async canDeleteCategory(id: string): Promise<{ canDelete: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/categories/${id}/can-delete`);
+    if (!response.ok) throw new Error(CATEGORY_MESSAGES.API_FETCH_FAILED);
+    return response.json();
+  },
 };
 
 export interface TicketEntryItem {

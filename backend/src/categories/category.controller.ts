@@ -29,6 +29,11 @@ export class CategoryController {
     return this.categoryService.findAll();
   }
 
+  @Get(':id/can-delete')
+  canDelete(@Param('id', ParseIntPipe) id: number) {
+    return this.categoryService.canDelete(id);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoryService.findOne(id);

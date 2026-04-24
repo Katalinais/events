@@ -1,11 +1,13 @@
 "use client"
 
-import React, { createContext, useContext, useCallback } from "react"
+import React, { createContext, useContext, useCallback, useMemo } from "react"
+import { useQueries } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { CATEGORY_MESSAGES } from "@/shared/constants/messages"
 import type { Category } from "@/shared/lib/store"
-import { useAdminEvents } from "@/shared/hooks/use-events"
+import { categoryApi } from "@/shared/lib/api-client"
 import {
+  categoryKeys,
   useCategories,
   useCreateCategory,
   useUpdateCategory,
@@ -25,7 +27,6 @@ const EventContext = createContext<EventContextType | undefined>(undefined)
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
   const { data: categories = [] } = useCategories()
-  const { data: events = [] } = useAdminEvents()
   const createCategory = useCreateCategory({
     onSuccess: () => toast.success(CATEGORY_MESSAGES.CREATE_SUCCESS),
     onError: (error) => toast.error(error.message || CATEGORY_MESSAGES.CREATE_ERROR),
@@ -53,11 +54,24 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     [updateCategoryMutation]
   )
 
+  const canDeleteResults = useQueries({
+    queries: categories.map((cat) => ({
+      queryKey: categoryKeys.canDelete(cat.id),
+      queryFn: () => categoryApi.canDeleteCategory(cat.id),
+    })),
+  })
+
+  const canDeleteMap = useMemo(() => {
+    const map: Record<string, boolean> = {}
+    categories.forEach((cat, i) => {
+      map[cat.id] = canDeleteResults[i]?.data?.canDelete ?? false
+    })
+    return map
+  }, [categories, canDeleteResults])
+
   const canDeleteCategory = useCallback(
-    (id: string) => {
-      return !events.some((event: { categoryId: string }) => event.categoryId === id)
-    },
-    [events]
+    (id: string) => canDeleteMap[id] ?? false,
+    [canDeleteMap]
   )
 
   const deleteCategory = useCallback(
