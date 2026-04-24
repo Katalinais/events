@@ -106,10 +106,7 @@ export async function generateTicketPdf(data: TicketPdfData): Promise<Buffer> {
       .fillColor('#6b7280')
       .text('Código de verificación', { align: 'center' });
     doc.moveDown(0.2);
-    doc
-      .fontSize(7)
-      .font('Helvetica')
-      .text(data.qrCode, { align: 'center' });
+    doc.fontSize(7).font('Helvetica').text(data.qrCode, { align: 'center' });
 
     doc.end();
   });

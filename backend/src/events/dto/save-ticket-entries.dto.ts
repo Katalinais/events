@@ -1,11 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsInt,
-  IsNumber,
-  Min,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsInt, IsNumber, Min, ValidateNested } from 'class-validator';
 
 export class TicketEntryItemDto {
   @IsInt()

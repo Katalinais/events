@@ -12,10 +12,7 @@ export class CategoryRepository {
     });
   }
 
-  findOtherActiveByNameInsensitive(
-    name: string,
-    excludeId: number,
-  ): Promise<Categoria | null> {
+  findOtherActiveByNameInsensitive(name: string, excludeId: number): Promise<Categoria | null> {
     return this.prisma.categoria.findFirst({
       where: {
         deletedAt: null,

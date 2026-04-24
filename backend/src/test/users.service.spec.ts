@@ -12,10 +12,7 @@ describe('UsersService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UsersService,
-        { provide: UserRepository, useFactory: mockUserRepository },
-      ],
+      providers: [UsersService, { provide: UserRepository, useFactory: mockUserRepository }],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
@@ -32,7 +29,14 @@ describe('UsersService', () => {
     it('converts createdAt Date to ISO string', async () => {
       const date = new Date('2024-06-15T10:00:00.000Z');
       repo.findManyNonAdminOrderedByCreatedDesc.mockResolvedValue([
-        { id: 1, nombre: 'Ana', apellido: 'García', correo: 'ana@example.com', username: 'ana', createdAt: date },
+        {
+          id: 1,
+          nombre: 'Ana',
+          apellido: 'García',
+          correo: 'ana@example.com',
+          username: 'ana',
+          createdAt: date,
+        },
       ]);
 
       const result = await service.findAll();

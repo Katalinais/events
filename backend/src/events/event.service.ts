@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { EVENT_MESSAGES } from '../shared/messages';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
@@ -33,9 +39,7 @@ export class EventService {
 
   async create(createEventDto: CreateEventDto) {
     await this.ensureCategoryExists(createEventDto.categoryId);
-    const date = createEventDto.date?.trim()
-      ? new Date(createEventDto.date)
-      : new Date();
+    const date = createEventDto.date?.trim() ? new Date(createEventDto.date) : new Date();
     return this.eventRepository.create({
       nombre: createEventDto.name,
       descripcion: createEventDto.description,
@@ -152,11 +156,11 @@ export class EventService {
     await this.findOne(eventId);
 
     for (const entry of entries) {
-      const cat = await this.ticketCategoryRepository.findFirstActiveById(
-        entry.ticketCategoryId,
-      );
+      const cat = await this.ticketCategoryRepository.findFirstActiveById(entry.ticketCategoryId);
       if (!cat) {
-        throw new BadRequestException(EVENT_MESSAGES.TICKET_CATEGORY_NOT_FOUND(entry.ticketCategoryId));
+        throw new BadRequestException(
+          EVENT_MESSAGES.TICKET_CATEGORY_NOT_FOUND(entry.ticketCategoryId),
+        );
       }
 
       const existing = await this.eventRepository.findTicketEntryByEventAndCategory(
@@ -166,7 +170,9 @@ export class EventService {
       if (existing) {
         const soldCount = existing.cantidadTotal - existing.cantidadDisponible;
         if (entry.totalQuantity < soldCount) {
-          throw new BadRequestException(EVENT_MESSAGES.CANNOT_REDUCE_BELOW_SOLD(entry.totalQuantity, cat.nombre, soldCount));
+          throw new BadRequestException(
+            EVENT_MESSAGES.CANNOT_REDUCE_BELOW_SOLD(entry.totalQuantity, cat.nombre, soldCount),
+          );
         }
       }
     }

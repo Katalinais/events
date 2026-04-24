@@ -34,7 +34,9 @@ export class TicketService {
       }
 
       if (entry.cantidadDisponible < item.quantity) {
-        throw new BadRequestException(TICKET_MESSAGES.NOT_ENOUGH_AVAILABLE(item.eventEntryId, entry.cantidadDisponible));
+        throw new BadRequestException(
+          TICKET_MESSAGES.NOT_ENOUGH_AVAILABLE(item.eventEntryId, entry.cantidadDisponible),
+        );
       }
 
       const subtotal = entry.precio * item.quantity;
@@ -52,7 +54,11 @@ export class TicketService {
       await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);
     }
 
-    const result = await this.ticketRepository.createTicketWithDetails(userId, total, purchaseItems);
+    const result = await this.ticketRepository.createTicketWithDetails(
+      userId,
+      total,
+      purchaseItems,
+    );
     this.cacheService.invalidate(CACHE_KEYS.TOP_SELLING_EVENTS);
     return result;
   }
