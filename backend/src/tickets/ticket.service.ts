@@ -1,10 +1,11 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { TICKET_MESSAGES } from '../shared/messages';
 import { EstadoEvento } from '@prisma/client';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
 import { generateTicketPdf } from '../utils/pdf.util';
 import { CacheService } from '../shared/cache.service';
-import { TOP_SELLING_CACHE_KEY } from '../events/event.service';
+import { CACHE_KEYS } from '../shared/constants';
 
 @Injectable()
 export class TicketService {
@@ -25,18 +26,16 @@ export class TicketService {
       const entry = await this.ticketRepository.findTicketEntryById(item.eventEntryId);
 
       if (!entry) {
-        throw new BadRequestException(`Ticket entry with ID ${item.eventEntryId} not found`);
+        throw new BadRequestException(TICKET_MESSAGES.ENTRY_NOT_FOUND(item.eventEntryId));
       }
 
       if (entry.evento.estado !== EstadoEvento.ACTIVO) {
-        throw new BadRequestException(
-          'Cannot purchase tickets for an event that has already ended',
-        );
+        throw new BadRequestException(TICKET_MESSAGES.EVENT_ALREADY_ENDED);
       }
 
       if (entry.cantidadDisponible < item.quantity) {
         throw new BadRequestException(
-          `Not enough tickets available for entry ID ${item.eventEntryId}. Available: ${entry.cantidadDisponible}`,
+          TICKET_MESSAGES.NOT_ENOUGH_AVAILABLE(item.eventEntryId, entry.cantidadDisponible),
         );
       }
 
@@ -60,7 +59,7 @@ export class TicketService {
       total,
       purchaseItems,
     );
-    this.cacheService.invalidate(TOP_SELLING_CACHE_KEY);
+    this.cacheService.invalidate(CACHE_KEYS.TOP_SELLING_EVENTS);
     return result;
   }
 
@@ -76,11 +75,11 @@ export class TicketService {
     const ticket = await this.ticketRepository.findTicketById(ticketId);
 
     if (!ticket) {
-      throw new NotFoundException(`Purchase with ID ${ticketId} not found`);
+      throw new NotFoundException(TICKET_MESSAGES.PURCHASE_NOT_FOUND(ticketId));
     }
 
     if (ticket.usuarioId !== userId) {
-      throw new NotFoundException(`Purchase with ID ${ticketId} not found`);
+      throw new NotFoundException(TICKET_MESSAGES.PURCHASE_NOT_FOUND(ticketId));
     }
 
     return generateTicketPdf({

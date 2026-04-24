@@ -16,6 +16,7 @@ import { Request, Response } from 'express';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TICKET_MESSAGES } from '../shared/messages';
 
 @Controller('tickets')
 @UseGuards(JwtAuthGuard)
@@ -30,7 +31,7 @@ export class TicketController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('You must be logged in to purchase tickets');
+      throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_PURCHASE);
     }
     return this.ticketService.create(userId, createTicketDto);
   }
@@ -45,7 +46,7 @@ export class TicketController {
   findMyTickets(@Req() req: Request & { user?: { userId: number } }) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('You must be logged in to view your purchases');
+      throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_MY_TICKETS);
     }
     return this.ticketService.findByUser(userId);
   }
@@ -58,7 +59,7 @@ export class TicketController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('You must be logged in to download the PDF');
+      throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_PDF);
     }
     const buffer = await this.ticketService.generatePdf(id, userId);
     res.set({

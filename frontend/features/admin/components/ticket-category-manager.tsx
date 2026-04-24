@@ -2,6 +2,7 @@
 
   import { useCallback } from "react"
   import { toast } from "sonner"
+  import { TICKET_CATEGORY_MESSAGES } from "@/shared/constants/messages"
   import {
     useTicketCategories,
     useCreateTicketCategory,
@@ -14,16 +15,16 @@
   export function TicketCategoryManager() {
     const { data: items = [] } = useTicketCategories()
     const createMutation = useCreateTicketCategory({
-      onSuccess: () => toast.success("Categoría de boleta creada correctamente"),
-      onError: (error) => toast.error(error.message || "Error al crear la categoría de boleta"),
+      onSuccess: () => toast.success(TICKET_CATEGORY_MESSAGES.CREATE_SUCCESS),
+      onError: (error) => toast.error(error.message || TICKET_CATEGORY_MESSAGES.CREATE_ERROR),
     })
     const updateMutation = useUpdateTicketCategory({
-      onSuccess: () => toast.success("Categoría de boleta actualizada correctamente"),
-      onError: (error) => toast.error(error.message || "Error al actualizar la categoría de boleta"),
+      onSuccess: () => toast.success(TICKET_CATEGORY_MESSAGES.UPDATE_SUCCESS),
+      onError: (error) => toast.error(error.message || TICKET_CATEGORY_MESSAGES.UPDATE_ERROR),
     })
     const deleteMutation = useDeleteTicketCategory({
-      onSuccess: () => toast.success("Categoría de boleta eliminada correctamente"),
-      onError: (error) => toast.error(error.message || "Error al eliminar la categoría de boleta"),
+      onSuccess: () => toast.success(TICKET_CATEGORY_MESSAGES.DELETE_SUCCESS),
+      onError: (error) => toast.error(error.message || TICKET_CATEGORY_MESSAGES.DELETE_ERROR),
     })
 
     const getSoldCount = (id: string) =>

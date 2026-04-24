@@ -5,6 +5,7 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
+import { EVENT_MESSAGES } from '../shared/messages';
 import type { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../categories/category.repository';
 import { TicketCategoryRepository } from '../ticket-categories/ticket-category.repository';
@@ -13,8 +14,8 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { TicketEntryItemDto } from './dto/save-ticket-entries.dto';
 import { EventRepository } from './event.repository';
 import { CacheService } from '../shared/cache.service';
+import { CACHE_KEYS } from '../shared/constants';
 
-export const TOP_SELLING_CACHE_KEY = 'events:top-selling';
 const TOP_SELLING_TTL_MS = 10 * 60 * 1000;
 
 @Injectable()
@@ -32,7 +33,7 @@ export class EventService {
     if (categoryId == null) return;
     const cat = await this.categoryRepository.findFirstActiveById(categoryId);
     if (!cat) {
-      throw new BadRequestException(`Category with ID ${categoryId} not found`);
+      throw new BadRequestException(EVENT_MESSAGES.CATEGORY_NOT_FOUND(categoryId));
     }
   }
 
@@ -69,7 +70,7 @@ export class EventService {
     const event = await this.eventRepository.findFirstActiveByIdWithInteresadosCount(id);
 
     if (!event) {
-      throw new NotFoundException(`Event with ID ${id} not found`);
+      throw new NotFoundException(EVENT_MESSAGES.NOT_FOUND(id));
     }
 
     return event;
@@ -108,9 +109,7 @@ export class EventService {
 
     const soldCount = await this.eventRepository.countSoldTicketsByEventId(id);
     if (soldCount > 0) {
-      throw new ConflictException(
-        `Cannot delete this event because ${soldCount} ${soldCount === 1 ? 'ticket has' : 'tickets have'} already been sold`,
-      );
+      throw new ConflictException(EVENT_MESSAGES.CANNOT_DELETE_SOLD(soldCount));
     }
 
     return this.eventRepository.softDeleteById(id);
@@ -132,7 +131,7 @@ export class EventService {
 
   async markInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
     if (!userId) {
-      throw new BadRequestException('User not identified');
+      throw new BadRequestException(EVENT_MESSAGES.USER_NOT_IDENTIFIED);
     }
     await this.findOne(eventId);
 
@@ -160,7 +159,7 @@ export class EventService {
       const cat = await this.ticketCategoryRepository.findFirstActiveById(entry.ticketCategoryId);
       if (!cat) {
         throw new BadRequestException(
-          `Ticket category with ID ${entry.ticketCategoryId} not found`,
+          EVENT_MESSAGES.TICKET_CATEGORY_NOT_FOUND(entry.ticketCategoryId),
         );
       }
 
@@ -172,7 +171,7 @@ export class EventService {
         const soldCount = existing.cantidadTotal - existing.cantidadDisponible;
         if (entry.totalQuantity < soldCount) {
           throw new BadRequestException(
-            `Cannot set ${entry.totalQuantity} tickets for "${cat.nombre}" as ${soldCount} have already been sold`,
+            EVENT_MESSAGES.CANNOT_REDUCE_BELOW_SOLD(entry.totalQuantity, cat.nombre, soldCount),
           );
         }
       }
@@ -194,7 +193,7 @@ export class EventService {
   }
 
   async findTopSelling() {
-    const cached = this.cacheService.get(TOP_SELLING_CACHE_KEY, TOP_SELLING_TTL_MS);
+    const cached = this.cacheService.get(CACHE_KEYS.TOP_SELLING_EVENTS, TOP_SELLING_TTL_MS);
     if (cached) {
       this.logger.debug('Top selling from cache');
       return cached;
@@ -202,13 +201,13 @@ export class EventService {
 
     this.logger.log('Repopulating top selling cache from DB');
     const result = await this.eventRepository.findTopSelling(3);
-    this.cacheService.set(TOP_SELLING_CACHE_KEY, result);
+    this.cacheService.set(CACHE_KEYS.TOP_SELLING_EVENTS, result);
     return result;
   }
 
   async unmarkInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
     if (!userId) {
-      throw new BadRequestException('User not identified');
+      throw new BadRequestException(EVENT_MESSAGES.USER_NOT_IDENTIFIED);
     }
     await this.findOne(eventId);
 

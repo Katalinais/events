@@ -61,6 +61,7 @@ import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { useTicketEntries, useSaveTicketEntries } from "@/shared/hooks/use-evento-entradas"
 import { uploadEventImage, type EventItem } from "@/shared/lib/api-client"
 import { toast } from "sonner"
+import { EVENT_MESSAGES } from "@/shared/constants/messages"
 
 interface EventFormData {
   name: string
@@ -129,11 +130,11 @@ export function EventManager() {
 
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof EventFormData, string>> = {}
-    if (!formData.name.trim()) errors.name = "El nombre es obligatorio"
+    if (!formData.name.trim()) errors.name = EVENT_MESSAGES.NAME_REQUIRED
     setFormErrors(errors)
     const validEntries = entries.filter((e) => e.ticketCategoryId && e.totalQuantity && e.price)
     if (validEntries.length === 0) {
-      setEntriesError("Debes agregar al menos una boleta")
+      setEntriesError(EVENT_MESSAGES.ENTRIES_REQUIRED)
       return false
     }
     setEntriesError(null)
@@ -176,11 +177,11 @@ export function EventManager() {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
         imagePreviewUrlRef.current = null
       }
-      toast.success("Evento creado correctamente")
+      toast.success(EVENT_MESSAGES.CREATE_SUCCESS)
       setIsCreateOpen(false)
       setFormErrors({})
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Error al crear el evento"
+      const message = error instanceof Error ? error.message : EVENT_MESSAGES.CREATE_ERROR
       toast.error(message)
     } finally {
       setIsSubmitting(false)
@@ -214,10 +215,10 @@ export function EventManager() {
         URL.revokeObjectURL(imagePreviewUrlRef.current)
         imagePreviewUrlRef.current = null
       }
-      toast.success("Evento actualizado correctamente")
+      toast.success(EVENT_MESSAGES.UPDATE_SUCCESS)
       setFormErrors({})
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Error al actualizar el evento"
+      const message = error instanceof Error ? error.message : EVENT_MESSAGES.UPDATE_ERROR
       toast.error(message)
     } finally {
       setIsSubmitting(false)
@@ -228,10 +229,10 @@ export function EventManager() {
     if (deletingEvent) {
       try {
         await deleteEvent.mutateAsync(deletingEvent.id)
-        toast.success("Evento eliminado correctamente")
+        toast.success(EVENT_MESSAGES.DELETE_SUCCESS)
         setDeletingEvent(null)
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Error al eliminar el evento"
+        const message = error instanceof Error ? error.message : EVENT_MESSAGES.DELETE_ERROR
         toast.error(message)
         setDeletingEvent(null)
       }

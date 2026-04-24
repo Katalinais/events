@@ -25,6 +25,7 @@ import { SaveTicketEntriesDto } from './dto/save-ticket-entries.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadService } from '../upload/upload.service';
 import { createImageMulterOptions } from '../upload/upload.config';
+import { EVENT_MESSAGES } from '../shared/messages';
 
 @Controller('events')
 export class EventController {
@@ -84,7 +85,7 @@ export class EventController {
   findFavorites(@Req() req: Request & { user?: { userId: number } }) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('You must be logged in to view favorites');
+      throw new BadRequestException(EVENT_MESSAGES.LOGIN_REQUIRED_FAVORITES);
     }
     return this.eventService.findFavoritesByUser(userId);
   }
@@ -109,7 +110,7 @@ export class EventController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('You must be logged in to mark interest');
+      throw new BadRequestException(EVENT_MESSAGES.LOGIN_REQUIRED_INTEREST);
     }
     return this.eventService.markInterested(id, userId);
   }
@@ -123,7 +124,7 @@ export class EventController {
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
-      throw new BadRequestException('You must be logged in to remove from favorites');
+      throw new BadRequestException(EVENT_MESSAGES.LOGIN_REQUIRED_UNINTEREST);
     }
     return this.eventService.unmarkInterested(id, userId);
   }
