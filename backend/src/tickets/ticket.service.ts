@@ -5,7 +5,7 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
 import { generateTicketPdf } from '../utils/pdf.util';
 import { CacheService } from '../shared/cache.service';
-import { TOP_SELLING_CACHE_KEY } from '../events/event.service';
+import { CACHE_KEYS } from '../shared/constants';
 
 @Injectable()
 export class TicketService {
@@ -53,7 +53,7 @@ export class TicketService {
     }
 
     const result = await this.ticketRepository.createTicketWithDetails(userId, total, purchaseItems);
-    this.cacheService.invalidate(TOP_SELLING_CACHE_KEY);
+    this.cacheService.invalidate(CACHE_KEYS.TOP_SELLING_EVENTS);
     return result;
   }
 

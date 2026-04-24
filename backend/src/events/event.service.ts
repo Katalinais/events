@@ -8,8 +8,8 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { TicketEntryItemDto } from './dto/save-ticket-entries.dto';
 import { EventRepository } from './event.repository';
 import { CacheService } from '../shared/cache.service';
+import { CACHE_KEYS } from '../shared/constants';
 
-export const TOP_SELLING_CACHE_KEY = 'events:top-selling';
 const TOP_SELLING_TTL_MS = 10 * 60 * 1000;
 
 @Injectable()
@@ -187,7 +187,7 @@ export class EventService {
   }
 
   async findTopSelling() {
-    const cached = this.cacheService.get(TOP_SELLING_CACHE_KEY, TOP_SELLING_TTL_MS);
+    const cached = this.cacheService.get(CACHE_KEYS.TOP_SELLING_EVENTS, TOP_SELLING_TTL_MS);
     if (cached) {
       this.logger.debug('Top selling from cache');
       return cached;
@@ -195,7 +195,7 @@ export class EventService {
 
     this.logger.log('Repopulating top selling cache from DB');
     const result = await this.eventRepository.findTopSelling(3);
-    this.cacheService.set(TOP_SELLING_CACHE_KEY, result);
+    this.cacheService.set(CACHE_KEYS.TOP_SELLING_EVENTS, result);
     return result;
   }
 
