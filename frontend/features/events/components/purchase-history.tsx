@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { Download, ShoppingBag, CalendarDays, Ticket } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Badge } from "@/shared/components/ui/badge"
 import { Separator } from "@/shared/components/ui/separator"
-import { useMyTickets } from "@/shared/hooks/use-tickets"
-import { ticketApi } from "@/shared/lib/api-client"
+import { useMyTickets, useDownloadPdf } from "@/shared/hooks/use-tickets"
 
 const COP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n)
@@ -25,22 +23,9 @@ function isUpcoming(eventDate: string) {
 
 export function PurchaseHistory() {
   const { data: purchases = [], isLoading } = useMyTickets()
-  const [downloading, setDownloading] = useState<number | null>(null)
+  const { mutate: downloadPdf, isPending: downloading, variables: downloadingId } = useDownloadPdf()
 
-  const handleDownload = async (purchaseId: number) => {
-    setDownloading(purchaseId)
-    try {
-      const blob = await ticketApi.downloadPdf(purchaseId)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `boletas-${purchaseId}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    } finally {
-      setDownloading(null)
-    }
-  }
+  const handleDownload = (purchaseId: number) => downloadPdf(purchaseId)
 
   if (isLoading) {
     return (
@@ -157,11 +142,11 @@ export function PurchaseHistory() {
                   <Button
                     size="sm"
                     className="gap-2"
-                    disabled={downloading === purchase.id}
+                    disabled={downloading && downloadingId === purchase.id}
                     onClick={() => handleDownload(purchase.id)}
                   >
                     <Download className="h-4 w-4" />
-                    {downloading === purchase.id ? "Generando..." : "Descargar boletas"}
+                    {downloading && downloadingId === purchase.id ? "Generando..." : "Descargar boletas"}
                   </Button>
                 )}
               </div>

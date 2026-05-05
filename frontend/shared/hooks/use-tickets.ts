@@ -34,3 +34,17 @@ export function useMyTickets() {
     queryFn: () => ticketApi.getMyTickets(),
   })
 }
+
+export function useDownloadPdf() {
+  return useMutation({
+    mutationFn: async (ticketId: number) => {
+      const blob = await ticketApi.downloadPdf(ticketId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `boletas-${ticketId}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    },
+  })
+}
