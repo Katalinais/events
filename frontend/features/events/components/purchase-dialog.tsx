@@ -18,9 +18,8 @@ import {
 import { Separator } from "@/shared/components/ui/separator"
 import { useTicketEntries } from "@/shared/hooks/use-evento-entradas"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
-import { usePurchaseTickets } from "@/shared/hooks/use-tickets"
+import { usePurchaseTickets, useDownloadPdf } from "@/shared/hooks/use-tickets"
 import { useAuth } from "@/shared/providers/auth-context"
-import { ticketApi } from "@/shared/lib/api-client"
 
 type Step = "selection" | "billing" | "success"
 
@@ -63,7 +62,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const [billingErrors, setBillingErrors] = useState<Partial<BillingForm>>({})
   const [purchasedQR, setPurchasedQR] = useState<string | null>(null)
   const [purchasedId, setPurchasedId] = useState<number | null>(null)
-  const [isDownloading, setIsDownloading] = useState(false)
+  const { mutate: downloadPdf, isPending: isDownloading } = useDownloadPdf()
 
   const getCategoryName = (ticketCategoryId: string) =>
     ticketCategories.find((c) => c.id === ticketCategoryId)?.name ?? "Boleta"
@@ -133,20 +132,9 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
     }
   }
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = () => {
     if (purchasedId == null) return
-    setIsDownloading(true)
-    try {
-      const blob = await ticketApi.downloadPdf(purchasedId)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `boletas-${purchasedId}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    } finally {
-      setIsDownloading(false)
-    }
+    downloadPdf(purchasedId)
   }
 
   const stepTitles: Record<Step, string> = {
