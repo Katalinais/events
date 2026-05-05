@@ -105,6 +105,7 @@ export const TICKET_MESSAGES = {
   // API client
   API_PURCHASE_FAILED: 'Error processing purchase',
   API_FETCH_MY_TICKETS_FAILED: 'Error fetching your purchases',
+  API_FETCH_MY_EVENTS_FAILED: 'Error fetching your purchased events',
   API_DOWNLOAD_PDF_FAILED: 'Error downloading PDF',
   API_FETCH_TOTAL_EARNINGS_FAILED: 'Error fetching total earnings',
   API_FETCH_ENTRIES_FAILED: 'Error fetching ticket entries for event',

@@ -51,6 +51,15 @@ export class TicketController {
     return this.ticketService.findByUser(userId);
   }
 
+  @Get('my-events')
+  findMyEvents(@Req() req: Request & { user?: { userId: number } }) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_MY_TICKETS);
+    }
+    return this.ticketService.findPurchasedEventsByUser(userId);
+  }
+
   @Get(':id/pdf')
   async downloadPdf(
     @Param('id', ParseIntPipe) id: number,

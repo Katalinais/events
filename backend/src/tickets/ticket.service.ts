@@ -71,6 +71,10 @@ export class TicketService {
     return this.ticketRepository.findTicketsByUser(userId);
   }
 
+  findPurchasedEventsByUser(userId: number) {
+    return this.ticketRepository.findPurchasedEventsByUser(userId);
+  }
+
   async generatePdf(ticketId: number, userId: number): Promise<Buffer> {
     const ticket = await this.ticketRepository.findTicketById(ticketId);
 

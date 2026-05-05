@@ -509,6 +509,14 @@ export interface TicketPurchaseItem {
   quantity: number;
 }
 
+export interface PurchasedEvent {
+  id: number;
+  name: string;
+  date: string;
+  imageUrl: string;
+  totalTickets: number;
+}
+
 export const ticketApi = {
   async getTotalEarnings(): Promise<number> {
     const response = await fetch(`${API_BASE_URL}/tickets/total-earnings`, {
@@ -541,6 +549,29 @@ export const ticketApi = {
       throw new Error(err.message || TICKET_MESSAGES.API_FETCH_MY_TICKETS_FAILED);
     }
     return response.json();
+  },
+
+  async getMyPurchasedEvents(): Promise<PurchasedEvent[]> {
+    const response = await fetch(`${API_BASE_URL}/tickets/my-events`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || TICKET_MESSAGES.API_FETCH_MY_EVENTS_FAILED);
+    }
+    const data: { id: number; nombre: string; fecha: string; urlImagen: string | null; totalTickets: number }[] =
+      await response.json();
+    return data.map((e) => ({
+      id: e.id,
+      name: e.nombre,
+      date: e.fecha,
+      imageUrl: e.urlImagen
+        ? e.urlImagen.startsWith('http')
+          ? e.urlImagen
+          : `${API_BASE_URL}${e.urlImagen}`
+        : '/placeholder.jpg',
+      totalTickets: e.totalTickets,
+    }));
   },
 
   async downloadPdf(ticketId: number): Promise<Blob> {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ticketApi, type TicketPurchaseItem } from "@/shared/lib/api-client"
+import { ticketApi, type TicketPurchaseItem, type PurchasedEvent } from "@/shared/lib/api-client"
 import { eventKeys } from "./use-events"
 
 export const ticketKeys = {
@@ -32,6 +32,13 @@ export function useMyTickets() {
   return useQuery({
     queryKey: ticketKeys.my(),
     queryFn: () => ticketApi.getMyTickets(),
+  })
+}
+
+export function useMyPurchasedEvents() {
+  return useQuery<PurchasedEvent[]>({
+    queryKey: [...ticketKeys.my(), 'events'] as const,
+    queryFn: () => ticketApi.getMyPurchasedEvents(),
   })
 }
 
