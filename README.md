@@ -27,9 +27,20 @@ events/
 │       ├── users/
 │       └── test/           # Tests unitarios
 ├── frontend/
-│   ├── app/
+│   ├── app/                 # Rutas App Router (/, /admin, /user, /past-events)
 │   ├── features/
-│   └── shared/
+│   │   ├── admin/           # Dashboard, gestión y reportes
+│   │   ├── auth/            # Formularios de login/registro
+│   │   ├── events/          # Vistas públicas, compra e historial
+│   │   └── navigation/      # Navbar pública
+│   ├── shared/
+│   │   ├── components/      # Componentes reutilizables (incluye ui/)
+│   │   ├── constants/       # Mensajes centralizados
+│   │   ├── hooks/           # Hooks de React Query y utilitarios
+│   │   ├── lib/             # API client, store y utilidades
+│   │   └── providers/       # Auth, Event y Query providers
+│   ├── public/              # Assets estáticos (logo, placeholders, imágenes)
+│   └── styles/
 └── README.md
 ```
 
@@ -103,14 +114,23 @@ La app se abre en `http://localhost:3001`.
 - Ver próximos eventos y los más vendidos.
 - Ver eventos pasados.
 - Para comprar boletas o marcar favoritos se solicita iniciar sesión.
+- Acceder desde la misma pantalla principal a login/registro sin salir de la vista pública de eventos.
 
 ### Usuarios registrados
 
 - Login con **usuario** y contraseña.
-- Registro: nombre, apellido (opcional), correo (opcional), usuario y contraseña.
+- Registro con inicio de sesión automático: nombre, apellido (opcional), correo (opcional), usuario y contraseña.
 - **Compra de boletas:** selección de tipo y cantidad, flujo de pago simulado, generación de QR y descarga de PDF.
 - Marcar eventos como favoritos.
 - Vista **Mis favoritos** en `/user`.
+
+## Frontend: organización y convenciones
+
+- **Mensajes centralizados:** validaciones, mensajes de error del cliente API y toasts de UI están agrupados en `frontend/shared/constants/messages.ts`.
+- **Dominios de mensajes:** autenticación, eventos, categorías, categorías de boletas y compras/boletas.
+- **Consumo consistente:** formularios (`login`, `register`) y capa API reutilizan las mismas constantes para evitar textos duplicados y mantener consistencia en UX.
+- **Contextos principales:** `auth-context` para sesión/rol y `event-context` para categorías y utilidades de gestión.
+- **Home pública con auth integrado:** en `frontend/app/page.tsx` se alterna entre listado público de eventos y formularios de autenticación.
 
 ### Administradores
 
