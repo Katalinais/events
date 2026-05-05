@@ -69,11 +69,6 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
     year: "numeric",
   })
 
-  const formattedPrice = new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "COP",
-  }).format(event.price)
-
   const handleInterested = () => {
     if (!isAuthenticated) {
       onRequestLogin?.()
@@ -118,11 +113,6 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
           <Badge className="bg-primary text-primary-foreground border-0 text-xs font-medium">
             {getCategoryName(event.categoryId)}
           </Badge>
-        </div>
-        <div className="absolute top-3 right-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
-            {formattedPrice}
-          </span>
         </div>
       </div>
 
