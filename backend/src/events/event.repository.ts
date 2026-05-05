@@ -19,37 +19,46 @@ export class EventRepository {
   }
 
   async findTopSelling(limit: number) {
-    const results = await this.prisma.detalleBoleta.groupBy({
+    const soldByEntry = await this.prisma.detalleBoleta.groupBy({
       by: ['eventoEntradaId'],
       _sum: { cantidad: true },
-      orderBy: { _sum: { cantidad: 'desc' } },
     });
 
-    // Resolve eventoId for each eventoEntradaId and aggregate by event
+    if (soldByEntry.length === 0) return [];
+
+    const entryIds = soldByEntry.map((r) => r.eventoEntradaId);
+    const entries = await this.prisma.eventoEntrada.findMany({
+      where: { id: { in: entryIds } },
+      select: { id: true, eventoId: true },
+    });
+
+    const entryToEvent = new Map(entries.map((e) => [e.id, e.eventoId]));
     const eventTotals = new Map<number, number>();
-    for (const r of results) {
-      const entry = await this.prisma.eventoEntrada.findFirst({
-        where: { id: r.eventoEntradaId },
-        select: { eventoId: true },
-      });
-      if (!entry) continue;
-      const prev = eventTotals.get(entry.eventoId) ?? 0;
-      eventTotals.set(entry.eventoId, prev + (r._sum.cantidad ?? 0));
+    for (const r of soldByEntry) {
+      const eventoId = entryToEvent.get(r.eventoEntradaId);
+      if (eventoId == null) continue;
+      eventTotals.set(eventoId, (eventTotals.get(eventoId) ?? 0) + (r._sum.cantidad ?? 0));
     }
 
-    const sorted = [...eventTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+    const topEventIds = [...eventTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([id]) => id);
 
-    const events = await Promise.all(
-      sorted.map(async ([eventId, totalSold]) => {
-        const event = await this.prisma.evento.findFirst({
-          where: { id: eventId, deletedAt: null, estado: EstadoEvento.ACTIVO },
-          include: { _count: { select: { interesados: true } } },
-        });
-        return event ? { ...event, totalSold } : null;
-      }),
-    );
+    if (topEventIds.length === 0) return [];
 
-    return events.filter((e): e is NonNullable<typeof e> => e !== null);
+    const events = await this.prisma.evento.findMany({
+      where: { id: { in: topEventIds }, deletedAt: null, estado: EstadoEvento.ACTIVO },
+      include: { _count: { select: { interesados: true } } },
+    });
+
+    const eventMap = new Map(events.map((e) => [e.id, e]));
+    return topEventIds
+      .map((id) => {
+        const event = eventMap.get(id);
+        return event ? { ...event, totalSold: eventTotals.get(id)! } : null;
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null);
   }
 
   async findAllEventsSalesSummary() {
