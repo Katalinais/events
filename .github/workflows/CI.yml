@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-build:
     name: Backend — Build
@@ -127,3 +131,17 @@ jobs:
 
       - name: Type check
         run: pnpm test
+
+  ci:
+    name: CI passed
+    runs-on: ubuntu-latest
+    needs: [backend-build, backend-test, frontend-build, frontend-test]
+    if: always()
+    steps:
+      - name: All checks passed
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+          fi
+          echo "All jobs passed"
