@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { TICKET_MESSAGES } from '../shared/messages';
+import { generateQRBuffer } from '../utils/qr.util';
 import { EstadoEvento } from '@prisma/client';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
@@ -69,6 +70,45 @@ export class TicketService {
 
   findByUser(userId: number) {
     return this.ticketRepository.findTicketsByUser(userId);
+  }
+
+  findPurchasedEventsByUser(userId: number) {
+    return this.ticketRepository.findPurchasedEventsByUser(userId);
+  }
+
+  async generateEventPdf(userId: number, eventId: number): Promise<Buffer> {
+    const ventas = await this.ticketRepository.findPurchasesByUserAndEvent(userId, eventId);
+    if (ventas.length === 0) {
+      throw new NotFoundException(TICKET_MESSAGES.NO_PURCHASES_FOR_EVENT(eventId));
+    }
+
+    const qrContent = JSON.stringify({ qrs: ventas.map((v) => v.codigoQR) });
+    const details = ventas.flatMap((v) =>
+      v.detalles.map((d) => ({
+        categoryName: d.eventoEntrada.categoriaEntrada.nombre,
+        eventName: d.eventoEntrada.evento.nombre,
+        quantity: d.cantidad,
+        unitPrice: d.precioUnitario,
+        subtotal: d.subtotal,
+      })),
+    );
+    const total = ventas.reduce((sum, v) => sum + v.total, 0);
+
+    return generateTicketPdf({
+      qrCode: qrContent,
+      saleDate: ventas[0].fechaVenta,
+      total,
+      details,
+    });
+  }
+
+  async generateEventQR(userId: number, eventId: number): Promise<Buffer> {
+    const qrs = await this.ticketRepository.findPurchaseQRsByUserAndEvent(userId, eventId);
+    if (qrs.length === 0) {
+      throw new NotFoundException(TICKET_MESSAGES.NO_PURCHASES_FOR_EVENT(eventId));
+    }
+    const content = JSON.stringify({ qrs });
+    return generateQRBuffer(content);
   }
 
   async generatePdf(ticketId: number, userId: number): Promise<Buffer> {

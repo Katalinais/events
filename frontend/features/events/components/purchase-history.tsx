@@ -1,10 +1,19 @@
 "use client"
 
-import { Download, ShoppingBag, CalendarDays, Ticket } from "lucide-react"
-import { Button } from "@/shared/components/ui/button"
+import { useState } from "react"
+import Image from "next/image"
+import { CalendarDays, Download, Eye, ShoppingBag, Ticket } from "lucide-react"
 import { Badge } from "@/shared/components/ui/badge"
+import { Button } from "@/shared/components/ui/button"
 import { Separator } from "@/shared/components/ui/separator"
-import { useMyTickets, useDownloadPdf } from "@/shared/hooks/use-tickets"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog"
+import { useMyPurchasedEvents, useMyTickets, useDownloadEventPdf } from "@/shared/hooks/use-tickets"
+import type { PurchasedEvent } from "@/shared/lib/api-client"
 
 const COP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n)
@@ -17,15 +26,100 @@ function formatDate(iso: string) {
   })
 }
 
-function isUpcoming(eventDate: string) {
-  return new Date(eventDate) > new Date()
+function isUpcoming(date: string) {
+  return new Date(date) > new Date()
+}
+
+interface EventDetailDialogProps {
+  event: PurchasedEvent | null
+  onClose: () => void
+}
+
+function EventDetailDialog({ event, onClose }: EventDetailDialogProps) {
+  const { data: allPurchases = [] } = useMyTickets()
+  const { mutate: downloadPdf, isPending: downloading } = useDownloadEventPdf()
+
+  const purchases = event
+    ? allPurchases.filter((p) =>
+        p.detalles.some((d) => d.eventoEntrada.evento.id === event.id)
+      )
+    : []
+
+  const handleClose = (open: boolean) => {
+    if (!open) onClose()
+  }
+
+  return (
+    <Dialog open={event !== null} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle style={{ fontFamily: "var(--font-heading)" }}>
+            {event?.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4">
+          {purchases.map((purchase, idx) => {
+            const eventDetalles = purchase.detalles.filter(
+              (d) => d.eventoEntrada.evento.id === event?.id
+            )
+            return (
+              <div key={purchase.id} className="flex flex-col gap-3">
+                {idx > 0 && <Separator />}
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Ticket className="h-3.5 w-3.5 shrink-0" />
+                  <span>Compra del {formatDate(purchase.fechaVenta)}</span>
+                </div>
+
+                <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+                  {eventDetalles.map((detalle) => (
+                    <div
+                      key={detalle.id}
+                      className="flex items-center justify-between px-4 py-3 text-sm"
+                    >
+                      <span className="font-medium text-foreground">
+                        {detalle.eventoEntrada.categoriaEntrada.nombre}
+                        <span className="ml-2 font-normal text-muted-foreground">
+                          × {detalle.cantidad}
+                        </span>
+                      </span>
+                      <div className="flex items-center gap-4 text-muted-foreground">
+                        <span>{COP(detalle.precioUnitario)} c/u</span>
+                        <span className="w-24 text-right font-medium text-foreground">
+                          {COP(detalle.subtotal)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end text-sm font-bold text-foreground">
+                  Total: {COP(purchase.total)}
+                </div>
+              </div>
+            )
+          })}
+
+          <Separator />
+
+          <Button
+            className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={downloading || !event}
+            onClick={() => event && downloadPdf(event.id)}
+          >
+            <Download className="h-4 w-4" />
+            {downloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export function PurchaseHistory() {
-  const { data: purchases = [], isLoading } = useMyTickets()
-  const { mutate: downloadPdf, isPending: downloading, variables: downloadingId } = useDownloadPdf()
+  const { data: events = [], isLoading } = useMyPurchasedEvents()
+  const [selectedEvent, setSelectedEvent] = useState<PurchasedEvent | null>(null)
 
-  const handleDownload = (purchaseId: number) => downloadPdf(purchaseId)
 
   if (isLoading) {
     return (
@@ -38,7 +132,7 @@ export function PurchaseHistory() {
     )
   }
 
-  if (purchases.length === 0) {
+  if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -53,107 +147,87 @@ export function PurchaseHistory() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-2 pb-8">
-        <h1
-          className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          Mis compras
-        </h1>
-        <p className="text-muted-foreground leading-relaxed">
-          {purchases.length} {purchases.length === 1 ? "compra realizada" : "compras realizadas"}.
-        </p>
-      </div>
+    <>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-2 pb-8">
+          <h1
+            className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Mis compras
+          </h1>
+          <p className="text-muted-foreground leading-relaxed">
+            {events.length} {events.length === 1 ? "evento comprado" : "eventos comprados"}.
+          </p>
+        </div>
 
-      <div className="flex flex-col gap-4">
-        {purchases.map((purchase) => {
-          const firstDetail = purchase.detalles[0]
-          if (!firstDetail) return null
-          const evento = firstDetail.eventoEntrada.evento
-          const upcoming = isUpcoming(evento.fecha)
-
-          return (
-            <article
-              key={purchase.id}
-              className="rounded-xl border border-border bg-card shadow-sm"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 p-5">
-                <div className="flex flex-col gap-1">
-                  <h2
-                    className="text-lg font-semibold leading-snug text-foreground"
-                    style={{ fontFamily: "var(--font-heading)" }}
-                  >
-                    {evento.nombre}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {formatDate(evento.fecha)}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Ticket className="h-3.5 w-3.5" />
-                      Comprado el {formatDate(purchase.fechaVenta)}
-                    </span>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {events.map((event) => {
+            const upcoming = isUpcoming(event.date)
+            return (
+              <article
+                key={event.id}
+                className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md"
+              >
+                <div className="relative aspect-[16/10] shrink-0 overflow-hidden">
+                  <Image
+                    src={event.imageUrl}
+                    alt={event.name}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                  <div className="absolute top-3 right-3">
+                    <Badge
+                      variant={upcoming ? "default" : "secondary"}
+                      className="border-0 text-xs font-medium"
+                    >
+                      {upcoming ? "Próximo" : "Finalizado"}
+                    </Badge>
                   </div>
                 </div>
-                <Badge
-                  variant={upcoming ? "default" : "secondary"}
-                  className="shrink-0 text-xs"
-                >
-                  {upcoming ? "Próximo" : "Finalizado"}
-                </Badge>
-              </div>
 
-              <Separator />
-
-              {/* Detalle de boletas */}
-              <div className="flex flex-col gap-0 divide-y divide-border">
-                {purchase.detalles.map((detalle) => (
-                  <div
-                    key={detalle.id}
-                    className="flex items-center justify-between px-5 py-3 text-sm"
-                  >
-                    <span className="font-medium text-foreground">
-                      {detalle.eventoEntrada.categoriaEntrada.nombre}
-                      <span className="ml-2 font-normal text-muted-foreground">
-                        × {detalle.cantidad}
-                      </span>
-                    </span>
-                    <div className="flex items-center gap-4 text-muted-foreground">
-                      <span>{COP(detalle.precioUnitario)} c/u</span>
-                      <span className="w-24 text-right font-medium text-foreground">
-                        {COP(detalle.subtotal)}
-                      </span>
+                <div className="flex flex-1 flex-col gap-3 p-4">
+                  <div className="flex flex-col gap-1">
+                    <h3
+                      className="line-clamp-2 text-lg font-semibold leading-snug text-foreground"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {event.name}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      <span className="text-sm">{formatDate(event.date)}</span>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              <Separator />
+                  <div className="mt-auto flex items-center justify-between border-t border-border/60 pt-3">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Ticket className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        {event.totalTickets} {event.totalTickets === 1 ? "entrada" : "entradas"}
+                      </span>
+                    </div>
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 bg-blue-600 text-white hover:bg-blue-700"
+                      onClick={() => setSelectedEvent(event)}
+                      aria-label="Ver detalles"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </main>
 
-              {/* Footer: total + acción */}
-              <div className="flex items-center justify-between gap-3 px-5 py-4">
-                <span className="text-base font-bold text-foreground">
-                  Total: {COP(purchase.total)}
-                </span>
-                {upcoming && (
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    disabled={downloading && downloadingId === purchase.id}
-                    onClick={() => handleDownload(purchase.id)}
-                  >
-                    <Download className="h-4 w-4" />
-                    {downloading && downloadingId === purchase.id ? "Generando..." : "Descargar boletas"}
-                  </Button>
-                )}
-              </div>
-            </article>
-          )
-        })}
-      </div>
-    </main>
+      <EventDetailDialog
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
+    </>
   )
 }
