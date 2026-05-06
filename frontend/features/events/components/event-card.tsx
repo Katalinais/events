@@ -4,7 +4,7 @@ import { useState, useRef, useLayoutEffect, useEffect } from "react"
 import { toast } from "sonner"
 import { EVENT_MESSAGES } from "@/shared/constants/messages"
 import Image from "next/image"
-import { CalendarDays, Heart, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react"
+import { CalendarDays, Heart, StarOff, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Badge } from "@/shared/components/ui/badge"
 import { useEventContext } from "@/shared/providers/event-context"
@@ -22,9 +22,10 @@ interface EventCardProps {
   event: EventItem
   onRequestLogin?: () => void
   initialFavorite?: boolean
+  favoriteIcon?: "heart" | "star"
 }
 
-export function EventCard({ event, onRequestLogin, initialFavorite = false }: EventCardProps) {
+export function EventCard({ event, onRequestLogin, initialFavorite = false, favoriteIcon = "heart" }: EventCardProps) {
   const { getCategoryName } = useEventContext()
   const { isAuthenticated } = useAuth()
   const markInterested = useMarkInterested()
@@ -188,7 +189,10 @@ export function EventCard({ event, onRequestLogin, initialFavorite = false }: Ev
                 : "border border-border bg-muted/80 text-primary hover:bg-muted"
             }`}
           >
-            <Heart className="h-5 w-5" fill={isFavorite ? "currentColor" : "none"} />
+            {favoriteIcon === "star"
+              ? <StarOff className="h-5 w-5" />
+              : <Heart className="h-5 w-5" fill={isFavorite ? "currentColor" : "none"} />
+            }
           </Button>
         </div>
       </div>
