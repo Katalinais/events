@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarDays, Heart } from "lucide-react"
+import { CalendarDays, StarOff } from "lucide-react"
 import { useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { useEvents, useFavoriteEvents } from "@/shared/hooks/use-events"
@@ -26,7 +26,7 @@ export default function UserFavoritesPage() {
           {isEventsTab ? (
             <CalendarDays className="h-8 w-8 text-muted-foreground animate-pulse" />
           ) : (
-            <Heart className="h-8 w-8 text-muted-foreground animate-pulse" />
+            <StarOff className="h-8 w-8 text-muted-foreground animate-pulse" />
           )}
         </div>
         <h3 className="text-lg font-semibold text-foreground">
@@ -40,7 +40,7 @@ export default function UserFavoritesPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <Heart className="h-8 w-8 text-muted-foreground" />
+          <StarOff className="h-8 w-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold text-foreground">Aún no tienes favoritos</h3>
         <p className="max-w-sm text-sm text-muted-foreground">
@@ -58,7 +58,7 @@ export default function UserFavoritesPage() {
             {isEventsTab ? (
               <CalendarDays className="h-5 w-5 text-primary" />
             ) : (
-              <Heart className="h-5 w-5 text-primary" />
+              <StarOff className="h-5 w-5 text-primary" />
             )}
           </div>
           <div>
@@ -83,10 +83,10 @@ export default function UserFavoritesPage() {
             key={event.id}
             event={event}
             initialFavorite={isEventsTab ? favoriteIds.has(event.id) : true}
+            favoriteIcon={isEventsTab ? "heart" : "star"}
           />
         ))}
       </div>
     </div>
   )
 }
-
