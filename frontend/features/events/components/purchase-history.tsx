@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { CalendarDays, Eye, ShoppingBag, Ticket } from "lucide-react"
+import { CalendarDays, Download, Eye, ShoppingBag, Ticket } from "lucide-react"
 import { Badge } from "@/shared/components/ui/badge"
 import { Button } from "@/shared/components/ui/button"
 import { Separator } from "@/shared/components/ui/separator"
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog"
-import { useMyPurchasedEvents, useMyTickets } from "@/shared/hooks/use-tickets"
+import { useMyPurchasedEvents, useMyTickets, useDownloadEventPdf } from "@/shared/hooks/use-tickets"
 import type { PurchasedEvent } from "@/shared/lib/api-client"
 
 const COP = (n: number) =>
@@ -37,6 +37,7 @@ interface EventDetailDialogProps {
 
 function EventDetailDialog({ event, onClose }: EventDetailDialogProps) {
   const { data: allPurchases = [] } = useMyTickets()
+  const { mutate: downloadPdf, isPending: downloading } = useDownloadEventPdf()
 
   const purchases = event
     ? allPurchases.filter((p) =>
@@ -44,8 +45,12 @@ function EventDetailDialog({ event, onClose }: EventDetailDialogProps) {
       )
     : []
 
+  const handleClose = (open: boolean) => {
+    if (!open) onClose()
+  }
+
   return (
-    <Dialog open={event !== null} onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open={event !== null} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle style={{ fontFamily: "var(--font-heading)" }}>
@@ -94,6 +99,17 @@ function EventDetailDialog({ event, onClose }: EventDetailDialogProps) {
               </div>
             )
           })}
+
+          <Separator />
+
+          <Button
+            className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={downloading || !event}
+            onClick={() => event && downloadPdf(event.id)}
+          >
+            <Download className="h-4 w-4" />
+            {downloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -103,6 +119,7 @@ function EventDetailDialog({ event, onClose }: EventDetailDialogProps) {
 export function PurchaseHistory() {
   const { data: events = [], isLoading } = useMyPurchasedEvents()
   const [selectedEvent, setSelectedEvent] = useState<PurchasedEvent | null>(null)
+
 
   if (isLoading) {
     return (

@@ -60,6 +60,44 @@ export class TicketController {
     return this.ticketService.findPurchasedEventsByUser(userId);
   }
 
+  @Get('my-events/:eventId/pdf')
+  async getEventPdf(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Req() req: Request & { user?: { userId: number } },
+    @Res() res: Response,
+  ) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_MY_TICKETS);
+    }
+    const buffer = await this.ticketService.generateEventPdf(userId, eventId);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="boletas-evento-${eventId}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Get('my-events/:eventId/qr')
+  async getEventQR(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Req() req: Request & { user?: { userId: number } },
+    @Res() res: Response,
+  ) {
+    const userId = req.user?.userId;
+    if (userId == null) {
+      throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_MY_TICKETS);
+    }
+    const buffer = await this.ticketService.generateEventQR(userId, eventId);
+    res.set({
+      'Content-Type': 'image/png',
+      'Content-Disposition': `inline; filename="qr-event-${eventId}.png"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
   @Get(':id/pdf')
   async downloadPdf(
     @Param('id', ParseIntPipe) id: number,

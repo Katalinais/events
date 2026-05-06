@@ -41,6 +41,7 @@ export const TICKET_MESSAGES = {
   LOGIN_REQUIRED_PURCHASE: 'You must be logged in to purchase tickets',
   LOGIN_REQUIRED_MY_TICKETS: 'You must be logged in to view your purchases',
   LOGIN_REQUIRED_PDF: 'You must be logged in to download the PDF',
+  NO_PURCHASES_FOR_EVENT: (eventId: number) => `No purchases found for event ID ${eventId}`,
 };
 
 export const UPLOAD_MESSAGES = {

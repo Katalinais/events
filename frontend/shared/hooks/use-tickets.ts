@@ -35,6 +35,20 @@ export function useMyTickets() {
   })
 }
 
+export function useDownloadEventPdf() {
+  return useMutation({
+    mutationFn: async (eventId: number) => {
+      const blob = await ticketApi.getEventPdf(eventId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `boletas-evento-${eventId}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    },
+  })
+}
+
 export function useMyPurchasedEvents() {
   return useQuery<PurchasedEvent[]>({
     queryKey: [...ticketKeys.my(), 'events'] as const,

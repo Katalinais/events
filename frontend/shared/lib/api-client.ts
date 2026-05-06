@@ -551,6 +551,17 @@ export const ticketApi = {
     return response.json();
   },
 
+  async getEventPdf(eventId: number): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/tickets/my-events/${eventId}/pdf`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || TICKET_MESSAGES.API_FETCH_MY_EVENTS_FAILED);
+    }
+    return response.blob();
+  },
+
   async getMyPurchasedEvents(): Promise<PurchasedEvent[]> {
     const response = await fetch(`${API_BASE_URL}/tickets/my-events`, {
       headers: { ...getAuthHeaders() },

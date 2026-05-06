@@ -86,6 +86,37 @@ export class TicketRepository {
     });
   }
 
+  findPurchasesByUserAndEvent(userId: number, eventId: number) {
+    return this.prisma.venta.findMany({
+      where: {
+        usuarioId: userId,
+        detalles: { some: { eventoEntrada: { eventoId: eventId } } },
+      },
+      orderBy: { fechaVenta: 'asc' },
+      include: {
+        detalles: {
+          where: { eventoEntrada: { eventoId: eventId } },
+          include: {
+            eventoEntrada: {
+              include: { categoriaEntrada: true, evento: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async findPurchaseQRsByUserAndEvent(userId: number, eventId: number): Promise<string[]> {
+    const ventas = await this.prisma.venta.findMany({
+      where: {
+        usuarioId: userId,
+        detalles: { some: { eventoEntrada: { eventoId: eventId } } },
+      },
+      select: { codigoQR: true },
+    });
+    return ventas.map((v) => v.codigoQR);
+  }
+
   async findPurchasedEventsByUser(userId: number) {
     const ventas = await this.prisma.venta.findMany({
       where: { usuarioId: userId },
