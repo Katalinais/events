@@ -7,12 +7,14 @@ import { TicketRepository } from './ticket.repository';
 import { generateTicketPdf } from '../utils/pdf.util';
 import { CacheService } from '../shared/cache.service';
 import { CACHE_KEYS } from '../shared/constants';
+import { PaymentGatewayService } from '../payment/payment-gateway.service';
 
 @Injectable()
 export class TicketService {
   constructor(
     private readonly ticketRepository: TicketRepository,
     private readonly cacheService: CacheService,
+    private readonly paymentGateway: PaymentGatewayService,
   ) {}
 
   async create(userId: number, dto: CreateTicketDto) {
@@ -50,6 +52,8 @@ export class TicketService {
     }
 
     const total = purchaseItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+    await this.paymentGateway.charge({ ...dto.payment, amount: total });
 
     for (const item of purchaseItems) {
       await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ticketApi, type TicketPurchaseItem, type PurchasedEvent } from "@/shared/lib/api-client"
+import { ticketApi, type TicketPurchaseItem, type CardData, type PurchasedEvent } from "@/shared/lib/api-client"
 import { eventKeys } from "./use-events"
 
 export const ticketKeys = {
@@ -16,7 +16,8 @@ interface MutationCallbacks {
 export function usePurchaseTickets(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (items: TicketPurchaseItem[]) => ticketApi.purchase(items),
+    mutationFn: ({ items, payment }: { items: TicketPurchaseItem[]; payment: CardData }) =>
+      ticketApi.purchase(items, payment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.my() })
       queryClient.invalidateQueries({ queryKey: [...eventKeys.all, "top-selling"] })

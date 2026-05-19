@@ -19,9 +19,11 @@ import { Separator } from "@/shared/components/ui/separator"
 import { useTicketEntries } from "@/shared/hooks/use-evento-entradas"
 import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { usePurchaseTickets, useDownloadPdf } from "@/shared/hooks/use-tickets"
+import type { CardData } from "@/shared/lib/api-client"
 import { useAuth } from "@/shared/providers/auth-context"
 
 type Step = "selection" | "billing" | "success"
+type Network = "visa" | "mastercard" | "nu"
 
 interface BillingForm {
   name: string
@@ -59,7 +61,8 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const [step, setStep] = useState<Step>("selection")
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [billing, setBilling] = useState<BillingForm>({ name: "", cardNumber: "", expiry: "", cvv: "" })
-  const [billingErrors, setBillingErrors] = useState<Partial<BillingForm>>({})
+  const [billingErrors, setBillingErrors] = useState<Partial<BillingForm> & { network?: string }>({})
+  const [network, setNetwork] = useState<Network | null>(null)
   const [purchasedQR, setPurchasedQR] = useState<string | null>(null)
   const [purchasedId, setPurchasedId] = useState<number | null>(null)
   const { mutate: downloadPdf, isPending: isDownloading } = useDownloadPdf()
@@ -91,6 +94,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
       setQuantities({})
       setBilling({ name: "", cardNumber: "", expiry: "", cvv: "" })
       setBillingErrors({})
+      setNetwork(null)
       setPurchasedQR(null)
       setPurchasedId(null)
     }
@@ -106,11 +110,13 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   }
 
   const validateBilling = (): boolean => {
-    const errors: Partial<BillingForm> = {}
+    const errors: Partial<BillingForm> & { network?: string } = {}
+    if (!network) errors.network = "Selecciona una red de pago"
     if (!billing.name.trim()) errors.name = TICKET_MESSAGES.BILLING_NAME_REQUIRED
     const digits = billing.cardNumber.replace(/\s/g, "")
     if (digits.length !== 16) errors.cardNumber = TICKET_MESSAGES.BILLING_CARD_LENGTH
-    if (!/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = TICKET_MESSAGES.BILLING_EXPIRY_FORMAT
+    // TODO: reactivar validación de vencimiento cuando Nu lo requiera
+    if (network !== "nu" && !/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = TICKET_MESSAGES.BILLING_EXPIRY_FORMAT
     if (billing.cvv.length < 3) errors.cvv = TICKET_MESSAGES.BILLING_CVV_REQUIRED
     setBillingErrors(errors)
     return Object.keys(errors).length === 0
@@ -119,11 +125,22 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const handlePurchase = async () => {
     if (!validateBilling()) return
 
+    const rawDigits = billing.cardNumber.replace(/\s/g, "")
+    // TODO: cuando Nu envíe fecha de vencimiento real, eliminar los valores quemados
+    const [mm, yy] = network === "nu" ? ["1", "99"] : billing.expiry.split("/")
+    const payment: CardData = {
+      card_number: rawDigits,
+      expiry_month: parseInt(mm, 10),
+      expiry_year: network === "nu" ? 2099 : 2000 + parseInt(yy, 10),
+      cvv: billing.cvv,
+      network: network!,
+    }
+
     const items = entries
       .filter((e) => (quantities[e.id] ?? 0) > 0)
       .map((e) => ({ eventEntryId: Number(e.id), quantity: quantities[e.id] }))
 
-    const result = await purchase.mutateAsync(items).catch(() => null)
+    const result = await purchase.mutateAsync({ items, payment }).catch(() => null)
     if (result) {
       setPurchasedQR(result.codigoQR)
       setPurchasedId(result.id)
@@ -235,6 +252,46 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
               </div>
 
               <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Red de pago</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["visa", "mastercard", "nu"] as Network[]).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setNetwork(n)}
+                      className={`flex items-center justify-center rounded-lg border py-3 transition-all ${
+                        network === n ? "ring-2 ring-offset-1" : "hover:bg-muted"
+                      } ${
+                        network === n && n === "visa" ? "ring-blue-600 border-blue-600" :
+                        network === n && n === "mastercard" ? "ring-orange-500 border-orange-500" :
+                        network === n && n === "nu" ? "ring-purple-600 border-purple-600" :
+                        "border-border bg-muted/40"
+                      }`}
+                    >
+                      {n === "visa" && (
+                        <svg viewBox="0 0 48 16" className="h-5 w-auto" aria-label="Visa">
+                          <text x="0" y="13" fontFamily="Arial" fontWeight="bold" fontStyle="italic" fontSize="16" fill="#1A1F71">VISA</text>
+                        </svg>
+                      )}
+                      {n === "mastercard" && (
+                        <svg viewBox="0 0 38 24" className="h-6 w-auto" aria-label="Mastercard">
+                          <circle cx="14" cy="12" r="12" fill="#EB001B" />
+                          <circle cx="24" cy="12" r="12" fill="#F79E1B" />
+                          <path d="M19 4.8a12 12 0 0 1 0 14.4A12 12 0 0 1 19 4.8z" fill="#FF5F00" />
+                        </svg>
+                      )}
+                      {n === "nu" && (
+                        <svg viewBox="0 0 40 20" className="h-5 w-auto" aria-label="Nu">
+                          <text x="2" y="15" fontFamily="Arial" fontWeight="bold" fontSize="16" fill="#820AD1">nu</text>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {billingErrors.network && <p className="text-xs text-destructive">{billingErrors.network}</p>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">Nombre en la tarjeta</Label>
                 <Input
                   placeholder="Juan Pérez"
@@ -258,10 +315,12 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">Vencimiento</Label>
+                  {/* TODO: habilitar cuando Nu requiera fecha de vencimiento — quitar disabled y el texto "N/A" */}
+                  <Label className={`text-xs ${network === "nu" ? "text-muted-foreground" : ""}`}>Vencimiento</Label>
                   <Input
-                    placeholder="MM/AA"
-                    value={billing.expiry}
+                    placeholder={network === "nu" ? "N/A" : "MM/AA"}
+                    value={network === "nu" ? "" : billing.expiry}
+                    disabled={network === "nu"}
                     onChange={(e) => setBilling((b) => ({ ...b, expiry: formatExpiry(e.target.value) }))}
                     className={billingErrors.expiry ? "border-destructive" : ""}
                   />
