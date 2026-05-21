@@ -5,11 +5,12 @@ import { TicketRepository } from './ticket.repository';
 import { AuthModule } from '../auth/auth.module';
 import { EventModule } from '../events/event.module';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PaymentGatewayService } from '../payment/payment-gateway.service';
 
 @Module({
   imports: [AuthModule, EventModule],
   controllers: [TicketController],
-  providers: [TicketService, TicketRepository, PrismaService],
+  providers: [TicketService, TicketRepository, PrismaService, PaymentGatewayService],
   exports: [TicketService],
 })
 export class TicketModule {}

@@ -515,6 +515,14 @@ export interface TicketPurchaseItem {
   quantity: number;
 }
 
+export interface CardData {
+  card_number: string;
+  expiry_month: number;
+  expiry_year: number;
+  cvv: string;
+  network: string;
+}
+
 export interface PurchasedEvent {
   id: number;
   name: string;
@@ -533,11 +541,11 @@ export const ticketApi = {
     return data.total
   },
 
-  async purchase(items: TicketPurchaseItem[]): Promise<BackendTicketPurchase> {
+  async purchase(items: TicketPurchaseItem[], payment: CardData): Promise<BackendTicketPurchase> {
     const response = await fetch(`${API_BASE_URL}/tickets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ items, payment }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));

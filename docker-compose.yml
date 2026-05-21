@@ -1,0 +1,46 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventosdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eventosdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/eventosdb
+      JWT_SECRET: 5b62005940b2ab3497a80009d7a4d9cf9e17e99b0d60112871c07db58367df8793a400603b9c9a029003965d68f861da78b67c76f95ae360750e6b06f0b5c045
+      FRONTEND_URL: http://192.168.1.75:3000
+      PORT: 3001
+      PAYMENT_GATEWAY_URL: http://host.docker.internal:4000/verify-card
+      EMPRESA_ID: 1095904b-2c89-41b0-b262-c0681b181b1c
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

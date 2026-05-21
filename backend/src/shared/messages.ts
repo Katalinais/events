@@ -42,6 +42,8 @@ export const TICKET_MESSAGES = {
   LOGIN_REQUIRED_MY_TICKETS: 'You must be logged in to view your purchases',
   LOGIN_REQUIRED_PDF: 'You must be logged in to download the PDF',
   NO_PURCHASES_FOR_EVENT: (eventId: number) => `No purchases found for event ID ${eventId}`,
+  PAYMENT_GATEWAY_REJECTED: 'El pago fue rechazado por la pasarela de pagos',
+  PAYMENT_GATEWAY_UNREACHABLE: 'No se pudo conectar con la pasarela de pagos',
 };
 
 export const UPLOAD_MESSAGES = {
