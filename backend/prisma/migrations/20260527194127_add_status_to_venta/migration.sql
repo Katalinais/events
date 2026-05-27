@@ -1,0 +1,7 @@
+-- CreateEnum
+CREATE TYPE "EstadoVenta" AS ENUM ('PENDIENTE', 'PROCESANDO', 'COMPLETADA', 'FALLIDA');
+
+-- AlterTable
+ALTER TABLE "Venta" ADD COLUMN     "errorMsg" TEXT,
+ADD COLUMN     "status" "EstadoVenta" NOT NULL DEFAULT 'PENDIENTE',
+ALTER COLUMN "total" SET DEFAULT 0;
