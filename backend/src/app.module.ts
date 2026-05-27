@@ -7,6 +7,7 @@ import { TicketCategoryModule } from './ticket-categories/ticket-category.module
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TicketModule } from './tickets/ticket.module';
+import { KafkaModule } from './kafka/kafka.module';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
@@ -16,6 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
       envFilePath: '.env',
     }),
     ScheduleModule.forRoot(),
+    KafkaModule,
     AuthModule,
     EventModule,
     CategoryModule,
