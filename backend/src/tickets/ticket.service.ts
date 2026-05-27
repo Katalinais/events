@@ -1,23 +1,23 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EstadoEvento } from '@prisma/client';
 import { TICKET_MESSAGES } from '../shared/messages';
 import { generateQRBuffer } from '../utils/qr.util';
-import { EstadoEvento } from '@prisma/client';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './ticket.repository';
 import { generateTicketPdf } from '../utils/pdf.util';
-import { CacheService } from '../shared/cache.service';
-import { CACHE_KEYS } from '../shared/constants';
-import { PaymentGatewayService } from '../payment/payment-gateway.service';
+import { KafkaProducerService } from '../kafka/kafka.producer.service';
 
 @Injectable()
 export class TicketService {
   constructor(
     private readonly ticketRepository: TicketRepository,
-    private readonly cacheService: CacheService,
-    private readonly paymentGateway: PaymentGatewayService,
+    private readonly kafkaProducer: KafkaProducerService,
+    private readonly config: ConfigService,
   ) {}
 
-  async create(userId: number, dto: CreateTicketDto) {
+  async create(userId: number, dto: CreateTicketDto): Promise<{ ventaId: number }> {
+    // 1. Validar entradas y calcular totales (sin decrementar stock aún)
     const purchaseItems: {
       eventEntryId: number;
       quantity: number;
@@ -31,41 +31,49 @@ export class TicketService {
       if (!entry) {
         throw new BadRequestException(TICKET_MESSAGES.ENTRY_NOT_FOUND(item.eventEntryId));
       }
-
       if (entry.evento.estado !== EstadoEvento.ACTIVO) {
         throw new BadRequestException(TICKET_MESSAGES.EVENT_ALREADY_ENDED);
       }
-
       if (entry.cantidadDisponible < item.quantity) {
         throw new BadRequestException(
           TICKET_MESSAGES.NOT_ENOUGH_AVAILABLE(item.eventEntryId, entry.cantidadDisponible),
         );
       }
 
-      const subtotal = entry.precio * item.quantity;
       purchaseItems.push({
         eventEntryId: item.eventEntryId,
         quantity: item.quantity,
         unitPrice: entry.precio,
-        subtotal,
+        subtotal: entry.precio * item.quantity,
       });
     }
 
     const total = purchaseItems.reduce((sum, i) => sum + i.subtotal, 0);
 
-    await this.paymentGateway.charge({ ...dto.payment, amount: total });
+    // 2. Crear venta en estado PENDIENTE
+    const venta = await this.ticketRepository.createPendingVenta(userId);
 
-    for (const item of purchaseItems) {
-      await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);
+    // 3. Publicar a Kafka para que el worker procese el pago
+    try {
+      await this.kafkaProducer.publishPurchaseRequest({
+        action: 'pay',
+        ventaId: venta.id,
+        userId: String(userId),
+        ticketId: String(venta.id),
+        empresa_id: this.config.get<string>('EMPRESA_ID', 'empresa-004'),
+        amount: total,
+        card_number: dto.payment.card_number,
+        expiry_month: dto.payment.expiry_month,
+        expiry_year: dto.payment.expiry_year,
+        cvv: dto.payment.cvv,
+        network: dto.payment.network,
+        items: purchaseItems,
+      });
+    } catch {
+      // Kafka caído → venta queda PENDIENTE en DB
     }
 
-    const result = await this.ticketRepository.createTicketWithDetails(
-      userId,
-      total,
-      purchaseItems,
-    );
-    this.cacheService.invalidate(CACHE_KEYS.TOP_SELLING_EVENTS);
-    return result;
+    return { ventaId: venta.id };
   }
 
   getTotalEarnings(): Promise<number> {
@@ -121,7 +129,6 @@ export class TicketService {
     if (!ticket) {
       throw new NotFoundException(TICKET_MESSAGES.PURCHASE_NOT_FOUND(ticketId));
     }
-
     if (ticket.usuarioId !== userId) {
       throw new NotFoundException(TICKET_MESSAGES.PURCHASE_NOT_FOUND(ticketId));
     }

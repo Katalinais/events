@@ -24,8 +24,8 @@ export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(
+  @HttpCode(HttpStatus.ACCEPTED)
+  async create(
     @Body() createTicketDto: CreateTicketDto,
     @Req() req: Request & { user?: { userId: number } },
   ) {
@@ -33,7 +33,8 @@ export class TicketController {
     if (userId == null) {
       throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_PURCHASE);
     }
-    return this.ticketService.create(userId, createTicketDto);
+    const result = await this.ticketService.create(userId, createTicketDto);
+    return { ok: true, ventaId: result.ventaId, mensaje: 'Tu compra está siendo procesada' };
   }
 
   @Get('total-earnings')

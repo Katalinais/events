@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EstadoVenta } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { EventoEntrada, Venta } from '@prisma/client';
 
@@ -20,15 +21,31 @@ export class TicketRepository {
     });
   }
 
-  createTicketWithDetails(
-    userId: number,
+  // ─── Métodos para el flujo async con Kafka ──────────────────────────────────
+
+  createPendingVenta(userId: number): Promise<Venta> {
+    return this.prisma.venta.create({
+      data: { usuarioId: userId },
+    });
+  }
+
+  updateVentaStatus(ventaId: number, status: EstadoVenta): Promise<Venta> {
+    return this.prisma.venta.update({
+      where: { id: ventaId },
+      data: { status },
+    });
+  }
+
+  completeVenta(
+    ventaId: number,
     total: number,
     items: { eventEntryId: number; quantity: number; unitPrice: number; subtotal: number }[],
   ): Promise<Venta> {
-    return this.prisma.venta.create({
+    return this.prisma.venta.update({
+      where: { id: ventaId },
       data: {
-        usuarioId: userId,
         total,
+        status: EstadoVenta.COMPLETADA,
         detalles: {
           create: items.map((item) => ({
             eventoEntradaId: item.eventEntryId,
@@ -50,9 +67,18 @@ export class TicketRepository {
     });
   }
 
+  failVenta(ventaId: number, errorMsg: string): Promise<Venta> {
+    return this.prisma.venta.update({
+      where: { id: ventaId },
+      data: { status: EstadoVenta.FALLIDA, errorMsg },
+    });
+  }
+
+  // ─── Métodos heredados (solo COMPLETADA) ────────────────────────────────────
+
   findTicketById(id: number) {
     return this.prisma.venta.findFirst({
-      where: { id },
+      where: { id, status: EstadoVenta.COMPLETADA },
       include: {
         detalles: {
           include: {
@@ -66,13 +92,16 @@ export class TicketRepository {
   }
 
   async getTotalEarnings(): Promise<number> {
-    const result = await this.prisma.venta.aggregate({ _sum: { total: true } });
+    const result = await this.prisma.venta.aggregate({
+      where: { status: EstadoVenta.COMPLETADA },
+      _sum: { total: true },
+    });
     return result._sum.total ?? 0;
   }
 
   findTicketsByUser(userId: number) {
     return this.prisma.venta.findMany({
-      where: { usuarioId: userId },
+      where: { usuarioId: userId, status: EstadoVenta.COMPLETADA },
       orderBy: { fechaVenta: 'desc' },
       include: {
         detalles: {
@@ -90,6 +119,7 @@ export class TicketRepository {
     return this.prisma.venta.findMany({
       where: {
         usuarioId: userId,
+        status: EstadoVenta.COMPLETADA,
         detalles: { some: { eventoEntrada: { eventoId: eventId } } },
       },
       orderBy: { fechaVenta: 'asc' },
@@ -110,6 +140,7 @@ export class TicketRepository {
     const ventas = await this.prisma.venta.findMany({
       where: {
         usuarioId: userId,
+        status: EstadoVenta.COMPLETADA,
         detalles: { some: { eventoEntrada: { eventoId: eventId } } },
       },
       select: { codigoQR: true },
@@ -119,7 +150,7 @@ export class TicketRepository {
 
   async findPurchasedEventsByUser(userId: number) {
     const ventas = await this.prisma.venta.findMany({
-      where: { usuarioId: userId },
+      where: { usuarioId: userId, status: EstadoVenta.COMPLETADA },
       include: {
         detalles: {
           select: {
@@ -156,5 +187,37 @@ export class TicketRepository {
     }
 
     return [...eventMap.values()].sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+  }
+
+  // Método legacy - mantenido por compatibilidad interna (no expuesto en el controller)
+  createTicketWithDetails(
+    userId: number,
+    total: number,
+    items: { eventEntryId: number; quantity: number; unitPrice: number; subtotal: number }[],
+  ): Promise<Venta> {
+    return this.prisma.venta.create({
+      data: {
+        usuarioId: userId,
+        total,
+        status: EstadoVenta.COMPLETADA,
+        detalles: {
+          create: items.map((item) => ({
+            eventoEntradaId: item.eventEntryId,
+            cantidad: item.quantity,
+            precioUnitario: item.unitPrice,
+            subtotal: item.subtotal,
+          })),
+        },
+      },
+      include: {
+        detalles: {
+          include: {
+            eventoEntrada: {
+              include: { categoriaEntrada: true, evento: true },
+            },
+          },
+        },
+      },
+    });
   }
 }
