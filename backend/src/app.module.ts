@@ -7,6 +7,7 @@ import { TicketCategoryModule } from './ticket-categories/ticket-category.module
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TicketModule } from './tickets/ticket.module';
+import { SalesModule } from './sales/sales.module';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
@@ -22,6 +23,7 @@ import { PrismaService } from '../prisma/prisma.service';
     TicketCategoryModule,
     UsersModule,
     TicketModule,
+    SalesModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],

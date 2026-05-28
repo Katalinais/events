@@ -34,7 +34,9 @@
     "@nestjs/mapped-types": "^2.0.4",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/platform-socket.io": "^11.1.24",
     "@nestjs/schedule": "^6.1.1",
+    "@nestjs/websockets": "^11.1.24",
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
@@ -46,7 +48,8 @@
     "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
