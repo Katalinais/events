@@ -28,8 +28,12 @@ services:
       PORT: 3001
       PAYMENT_GATEWAY_URL: http://host.docker.internal:4000/verify-card
       EMPRESA_ID: 1095904b-2c89-41b0-b262-c0681b181b1c
+      KAFKA_BROKERS: kafka:9092
     volumes:
       - ./backend/uploads:/app/uploads
+    networks:
+      - default
+      - kafka_kafka-net
     depends_on:
       db:
         condition: service_healthy
@@ -44,3 +48,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  default:
+  kafka_kafka-net:
+    external: true
