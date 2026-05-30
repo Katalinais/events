@@ -7,11 +7,20 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socket = io(BACKEND_URL, { withCredentials: true });
+    const token = localStorage.getItem('auth_token');
+
+    const socket = io(BACKEND_URL, {
+      withCredentials: true,
+      auth: { token },
+    });
     socketRef.current = socket;
 
     socket.on('hola', (data: { mensaje: string }) => {
       console.log('[WebSocket] hola:', data.mensaje);
+    });
+
+    socket.on('purchase:result', (data: { type: string; message: string }) => {
+      console.log('[WebSocket] purchase:result:', data);
     });
 
     return () => {
