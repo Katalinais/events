@@ -6,9 +6,10 @@ import { AuthModule } from '../auth/auth.module';
 import { EventModule } from '../events/event.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentGatewayService } from '../payment/payment-gateway.service';
+import { BrokerModule } from '../broker/broker.module';
 
 @Module({
-  imports: [AuthModule, EventModule],
+  imports: [AuthModule, EventModule, BrokerModule],
   controllers: [TicketController],
   providers: [TicketService, TicketRepository, PrismaService, PaymentGatewayService],
   exports: [TicketService],

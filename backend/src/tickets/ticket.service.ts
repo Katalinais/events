@@ -8,6 +8,7 @@ import { generateTicketPdf } from '../utils/pdf.util';
 import { CacheService } from '../shared/cache.service';
 import { CACHE_KEYS } from '../shared/constants';
 import { PaymentGatewayService } from '../payment/payment-gateway.service';
+import { PurchaseProducer } from '../broker/purchase.producer';
 
 @Injectable()
 export class TicketService {
@@ -15,6 +16,7 @@ export class TicketService {
     private readonly ticketRepository: TicketRepository,
     private readonly cacheService: CacheService,
     private readonly paymentGateway: PaymentGatewayService,
+    private readonly purchaseProducer: PurchaseProducer,
   ) {}
 
   async create(userId: number, dto: CreateTicketDto) {
@@ -53,7 +55,16 @@ export class TicketService {
 
     const total = purchaseItems.reduce((sum, i) => sum + i.subtotal, 0);
 
-    await this.paymentGateway.charge({ ...dto.payment, amount: total });
+    try {
+      await this.paymentGateway.charge({ ...dto.payment, amount: total });
+    } catch (error) {
+      await this.purchaseProducer.publishPurchaseEvent({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Payment failed',
+        userId,
+      });
+      throw error;
+    }
 
     for (const item of purchaseItems) {
       await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);
@@ -65,6 +76,13 @@ export class TicketService {
       purchaseItems,
     );
     this.cacheService.invalidate(CACHE_KEYS.TOP_SELLING_EVENTS);
+
+    await this.purchaseProducer.publishPurchaseEvent({
+      type: 'success',
+      text: `Compra exitosa por $${total}. Ticket ID: ${result.id}`,
+      userId,
+    });
+
     return result;
   }
 
