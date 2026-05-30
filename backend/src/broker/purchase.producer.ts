@@ -32,7 +32,7 @@ export class PurchaseProducer implements OnModuleInit, OnModuleDestroy {
 
   async publishPurchaseEvent(payload: PurchaseEventPayload): Promise<void> {
     await this.producer.send({
-      topic: 'purchase.events',
+      topic: 'messages',
       messages: [
         {
           key: String(payload.userId),
