@@ -99,7 +99,7 @@ export class TicketService {
 
     await this.purchaseProducer.publishPurchaseEvent({
       type: 'success',
-      text: `Compra exitosa por $${total}. Ticket ID: ${result.id}`,
+      text: `Compra exitosa por $${total}`,
       userId,
     });
 
