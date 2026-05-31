@@ -96,6 +96,7 @@ export const TICKET_MESSAGES = {
   BILLING_NAME_REQUIRED: 'Requerido',
   BILLING_CARD_LENGTH: '16 dígitos requeridos',
   BILLING_EXPIRY_FORMAT: 'Formato MM/AA',
+  BILLING_EXPIRY_EXPIRED: 'La tarjeta está vencida',
   BILLING_CVV_REQUIRED: 'Requerido',
 
   // Toast UI

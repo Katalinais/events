@@ -3,6 +3,7 @@ import { Inter, DM_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { EventProvider } from '@/shared/providers/event-context'
 import { AuthProvider } from '@/shared/providers/auth-context'
+import { SocketProvider } from '@/shared/providers/socket-context'
 import { QueryProvider } from '@/shared/providers/query-client'
 import { Toaster } from '@/shared/components/ui/sonner'
 import './globals.css'
@@ -40,10 +41,12 @@ export default function RootLayout({
       <body className={`${inter.variable} ${dmSans.variable} font-sans antialiased`}>
         <QueryProvider>
           <AuthProvider>
-            <EventProvider>
-              {children}
-              <Toaster />
-            </EventProvider>
+            <SocketProvider>
+              <EventProvider>
+                {children}
+                <Toaster />
+              </EventProvider>
+            </SocketProvider>
           </AuthProvider>
         </QueryProvider>
         <Analytics />
