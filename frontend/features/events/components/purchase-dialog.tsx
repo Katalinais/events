@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { TICKET_MESSAGES } from "@/shared/constants/messages"
-import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download, CreditCard, Lock, ChevronLeft } from "lucide-react"
+import { Minus, Plus, ShoppingCart, Ticket, CheckCircle2, Download, CreditCard, Lock, ChevronLeft, Loader2, XCircle } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -21,8 +21,16 @@ import { useTicketCategories } from "@/shared/hooks/use-ticket-categories"
 import { usePurchaseTickets, useDownloadPdf } from "@/shared/hooks/use-tickets"
 import type { CardData } from "@/shared/lib/api-client"
 import { useAuth } from "@/shared/providers/auth-context"
+import { useSocketContext } from "@/shared/providers/socket-context"
 
-type Step = "selection" | "billing" | "success"
+type Step = "selection" | "billing" | "processing" | "success"
+type ProcessingStage = "payment" | "ai" | "done"
+
+const PURCHASE_STAGES = [
+  { key: "validating", label: "Validando disponibilidad" },
+  { key: "gateway",    label: "Verificando con la pasarela de pago" },
+  { key: "creating",   label: "Generando boletas" },
+] as const
 type Network = "visa" | "mastercard" | "nu"
 
 interface BillingForm {
@@ -52,6 +60,7 @@ function formatExpiry(value: string) {
 
 export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onRequestLogin }: PurchaseDialogProps) {
   const { isAuthenticated } = useAuth()
+  const { socket } = useSocketContext()
   const { data: entries = [], isLoading } = useTicketEntries(open ? eventId : null)
   const { data: ticketCategories = [] } = useTicketCategories()
   const purchase = usePurchaseTickets({
@@ -59,6 +68,9 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   })
 
   const [step, setStep] = useState<Step>("selection")
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>("payment")
+  const [reachedStageIndex, setReachedStageIndex] = useState<number>(-1)
+  const [aiMessage, setAiMessage] = useState<{ type: string; message: string } | null>(null)
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [billing, setBilling] = useState<BillingForm>({ name: "", cardNumber: "", expiry: "", cvv: "" })
   const [billingErrors, setBillingErrors] = useState<Partial<BillingForm> & { network?: string }>({})
@@ -66,6 +78,27 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const [purchasedQR, setPurchasedQR] = useState<string | null>(null)
   const [purchasedId, setPurchasedId] = useState<number | null>(null)
   const { mutate: downloadPdf, isPending: isDownloading } = useDownloadPdf()
+
+  useEffect(() => {
+    if (!socket) return
+
+    const onResult = (data: { type: string; message: string }) => {
+      setAiMessage(data)
+      setProcessingStage("done")
+    }
+
+    const onStage = (data: { stage: string }) => {
+      const idx = PURCHASE_STAGES.findIndex((s) => s.key === data.stage)
+      if (idx !== -1) setReachedStageIndex(idx)
+    }
+
+    socket.on("purchase:result", onResult)
+    socket.on("purchase:stage", onStage)
+    return () => {
+      socket.off("purchase:result", onResult)
+      socket.off("purchase:stage", onStage)
+    }
+  }, [socket])
 
   const getCategoryName = (ticketCategoryId: string) =>
     ticketCategories.find((c) => c.id === ticketCategoryId)?.name ?? "Boleta"
@@ -91,6 +124,9 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
     onOpenChange(o)
     if (!o) {
       setStep("selection")
+      setProcessingStage("payment")
+      setReachedStageIndex(-1)
+      setAiMessage(null)
       setQuantities({})
       setBilling({ name: "", cardNumber: "", expiry: "", cvv: "" })
       setBillingErrors({})
@@ -115,8 +151,18 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
     if (!billing.name.trim()) errors.name = TICKET_MESSAGES.BILLING_NAME_REQUIRED
     const digits = billing.cardNumber.replace(/\s/g, "")
     if (digits.length !== 16) errors.cardNumber = TICKET_MESSAGES.BILLING_CARD_LENGTH
-    // TODO: reactivar validación de vencimiento cuando Nu lo requiera
-    if (network !== "nu" && !/^\d{2}\/\d{2}$/.test(billing.expiry)) errors.expiry = TICKET_MESSAGES.BILLING_EXPIRY_FORMAT
+    if (network !== "nu") {
+      if (!/^\d{2}\/\d{2}$/.test(billing.expiry)) {
+        errors.expiry = TICKET_MESSAGES.BILLING_EXPIRY_FORMAT
+      } else {
+        const [mm, yy] = billing.expiry.split("/")
+        const expiry = new Date(2000 + parseInt(yy, 10), parseInt(mm, 10) - 1, 1)
+        const now = new Date()
+        if (expiry < new Date(now.getFullYear(), now.getMonth(), 1)) {
+          errors.expiry = TICKET_MESSAGES.BILLING_EXPIRY_EXPIRED
+        }
+      }
+    }
     if (billing.cvv.length < 3) errors.cvv = TICKET_MESSAGES.BILLING_CVV_REQUIRED
     setBillingErrors(errors)
     return Object.keys(errors).length === 0
@@ -140,12 +186,15 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
       .filter((e) => (quantities[e.id] ?? 0) > 0)
       .map((e) => ({ eventEntryId: Number(e.id), quantity: quantities[e.id] }))
 
+    setStep("processing")
+    setProcessingStage("payment")
+    setReachedStageIndex(-1)
+
     const result = await purchase.mutateAsync({ items, payment }).catch(() => null)
     if (result) {
       setPurchasedQR(result.codigoQR)
       setPurchasedId(result.id)
-      setStep("success")
-      toast.success(TICKET_MESSAGES.PURCHASE_SUCCESS)
+      setProcessingStage("ai")
     }
   }
 
@@ -157,6 +206,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
   const stepTitles: Record<Step, string> = {
     selection: "Comprar boletas",
     billing: "Datos de pago",
+    processing: "Procesando compra",
     success: "¡Compra exitosa!",
   }
 
@@ -172,6 +222,7 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
             )}
             {step === "selection" && <Ticket className="h-5 w-5 text-primary" />}
             {step === "billing" && <CreditCard className="h-5 w-5 text-primary" />}
+            {step === "processing" && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
             {step === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
             {stepTitles[step]}
           </DialogTitle>
@@ -360,7 +411,72 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
           </>
         )}
 
-        {/* ── Step 3: Éxito ── */}
+        {/* ── Step 3: Procesando ── */}
+        {step === "processing" && (
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col gap-3">
+              {PURCHASE_STAGES.map((s, i) => {
+                const isDone = processingStage !== "payment"
+                  ? true
+                  : i < reachedStageIndex
+                const isActive = processingStage === "payment" && i === reachedStageIndex
+                const isError = processingStage === "done" && aiMessage?.type === "error" && i === PURCHASE_STAGES.length - 1
+
+                return (
+                  <div key={s.key} className="flex items-center gap-3">
+                    {isError ? (
+                      <XCircle className="h-5 w-5 shrink-0 text-destructive" />
+                    ) : isDone ? (
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" />
+                    ) : isActive ? (
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+                    ) : (
+                      <div className="h-5 w-5 shrink-0 rounded-full border-2 border-muted" />
+                    )}
+                    <span className={`text-sm ${isActive ? "font-medium text-foreground" : isDone || isError ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                )
+              })}
+
+              {/* Spinner esperando resultado del worker */}
+              {processingStage === "ai" && (
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 shrink-0 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Procesando resultado...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Mensaje del worker */}
+            {processingStage === "done" && aiMessage && (
+              <div className={`rounded-lg border px-4 py-3 text-sm ${aiMessage.type === "error" ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"}`}>
+                {aiMessage.message}
+              </div>
+            )}
+
+            {processingStage === "done" && (
+              <div className="flex flex-col gap-2 pt-2">
+                {purchasedId && aiMessage?.type !== "error" && (
+                  <Button
+                    className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={isDownloading}
+                    onClick={() => downloadPdf(purchasedId)}
+                  >
+                    <Download className="h-4 w-4" />
+                    {isDownloading ? "Generando PDF..." : "Descargar boletas (PDF)"}
+                  </Button>
+                )}
+                <Button variant="outline" className="w-full" onClick={() => handleClose(false)}>
+                  Cerrar
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 4: Éxito ── */}
         {step === "success" && (
           <div className="flex flex-col items-center gap-4 py-4 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-500" />

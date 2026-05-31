@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException, NotFoundException } from '@nestjs/common';
 import { TICKET_MESSAGES } from '../shared/messages';
 import { generateQRBuffer } from '../utils/qr.util';
 import { EstadoEvento } from '@prisma/client';
@@ -9,6 +9,19 @@ import { CacheService } from '../shared/cache.service';
 import { CACHE_KEYS } from '../shared/constants';
 import { PaymentGatewayService } from '../payment/payment-gateway.service';
 import { PurchaseProducer } from '../broker/purchase.producer';
+import { SalesGateway } from '../sales/sales.gateway';
+
+function extractMessage(error: unknown): string {
+  if (error instanceof HttpException) {
+    const response = error.getResponse();
+    if (typeof response === 'string') return response;
+    const r = response as Record<string, unknown>;
+    const msg = r['message'];
+    if (Array.isArray(msg)) return String(msg[0]);
+    return String(msg ?? 'Error desconocido');
+  }
+  return error instanceof Error ? error.message : 'Error desconocido';
+}
 
 @Injectable()
 export class TicketService {
@@ -17,6 +30,7 @@ export class TicketService {
     private readonly cacheService: CacheService,
     private readonly paymentGateway: PaymentGatewayService,
     private readonly purchaseProducer: PurchaseProducer,
+    private readonly salesGateway: SalesGateway,
   ) {}
 
   async create(userId: number, dto: CreateTicketDto) {
@@ -26,6 +40,8 @@ export class TicketService {
       unitPrice: number;
       subtotal: number;
     }[] = [];
+
+    this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'validating' });
 
     for (const item of dto.items) {
       const entry = await this.ticketRepository.findTicketEntryById(item.eventEntryId);
@@ -55,16 +71,20 @@ export class TicketService {
 
     const total = purchaseItems.reduce((sum, i) => sum + i.subtotal, 0);
 
+    this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'gateway' });
+
     try {
       await this.paymentGateway.charge({ ...dto.payment, amount: total });
     } catch (error) {
       await this.purchaseProducer.publishPurchaseEvent({
         type: 'error',
-        text: error instanceof Error ? error.message : 'Payment failed',
+        text: extractMessage(error),
         userId,
       });
       throw error;
     }
+
+    this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'creating' });
 
     for (const item of purchaseItems) {
       await this.ticketRepository.decrementAvailable(item.eventEntryId, item.quantity);

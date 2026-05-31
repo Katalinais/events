@@ -13,7 +13,6 @@ import {
 import { useEventContext } from "@/shared/providers/event-context"
 import { useAuth } from "@/shared/providers/auth-context"
 import { useEvents, useFavoriteEvents } from "@/shared/hooks/use-events"
-import { useSocket } from "@/shared/hooks/use-socket"
 import { EventCard } from "@/features/events/components/event-card"
 import { TopSellingEvents } from "@/features/events/components/top-selling-events"
 
@@ -26,7 +25,6 @@ export function PublicEvents({ onRequestLogin }: PublicEventsProps) {
   const { isAuthenticated } = useAuth()
   const { data: events = [], isLoading } = useEvents()
   const { data: favoriteEvents = [] } = useFavoriteEvents({ enabled: isAuthenticated })
-  useSocket()
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
 
