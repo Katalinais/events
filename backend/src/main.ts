@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { AppLogger } from './logger/app-logger.service';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { mkdirSync, existsSync } from 'fs';
@@ -11,7 +12,9 @@ async function bootstrap() {
     mkdirSync(uploadsPath, { recursive: true });
   }
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+  const logger = app.get(AppLogger);
+  app.useLogger(logger);
 
   app.useGlobalPipes(
     new ValidationPipe({

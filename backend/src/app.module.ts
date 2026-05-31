@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventModule } from './events/event.module';
@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TicketModule } from './tickets/ticket.module';
 import { SalesModule } from './sales/sales.module';
+import { LoggerModule } from './logger/logger.module';
+import { TraceMiddleware } from './logger/trace.middleware';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
@@ -17,6 +19,7 @@ import { PrismaService } from '../prisma/prisma.service';
       envFilePath: '.env',
     }),
     ScheduleModule.forRoot(),
+    LoggerModule,
     AuthModule,
     EventModule,
     CategoryModule,
@@ -28,4 +31,8 @@ import { PrismaService } from '../prisma/prisma.service';
   providers: [PrismaService],
   exports: [PrismaService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TraceMiddleware).forRoutes('*');
+  }
+}
