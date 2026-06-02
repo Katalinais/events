@@ -110,7 +110,7 @@ describe('EventService', () => {
 
   describe('markInterested', () => {
     it('throws BadRequestException when userId is falsy', async () => {
-      await expect(service.markInterested(1, 0)).rejects.toThrow(BadRequestException);
+      await expect(service.markInterested(1, '')).rejects.toThrow(BadRequestException);
     });
   });
 });

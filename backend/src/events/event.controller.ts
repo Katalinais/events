@@ -82,7 +82,7 @@ export class EventController {
 
   @Get('favorites')
   @UseGuards(JwtAuthGuard)
-  findFavorites(@Req() req: Request & { user?: { userId: number } }) {
+  findFavorites(@Req() req: Request & { user?: { userId: string } }) {
     const userId = req.user?.userId;
     if (userId == null) {
       throw new BadRequestException(EVENT_MESSAGES.LOGIN_REQUIRED_FAVORITES);
@@ -106,7 +106,7 @@ export class EventController {
   @UseGuards(JwtAuthGuard)
   markInterested(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: Request & { user?: { userId: number } },
+    @Req() req: Request & { user?: { userId: string } },
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
@@ -120,7 +120,7 @@ export class EventController {
   @UseGuards(JwtAuthGuard)
   unmarkInterested(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: Request & { user?: { userId: number } },
+    @Req() req: Request & { user?: { userId: string } },
   ) {
     const userId = req.user?.userId;
     if (userId == null) {

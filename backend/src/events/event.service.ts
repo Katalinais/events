@@ -121,7 +121,7 @@ export class EventService {
     return this.eventRepository.findUpcomingActive(now, limit);
   }
 
-  async findFavoritesByUser(userId: number) {
+  async findFavoritesByUser(userId: string) {
     const favorites = await this.eventRepository.findUsuarioInteresadosForUserFavorites(userId);
 
     return favorites
@@ -129,7 +129,7 @@ export class EventService {
       .filter((event): event is NonNullable<typeof event> => event != null);
   }
 
-  async markInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
+  async markInterested(eventId: number, userId: string): Promise<{ interesados: number }> {
     if (!userId) {
       throw new BadRequestException(EVENT_MESSAGES.USER_NOT_IDENTIFIED);
     }
@@ -205,7 +205,7 @@ export class EventService {
     return result;
   }
 
-  async unmarkInterested(eventId: number, userId: number): Promise<{ interesados: number }> {
+  async unmarkInterested(eventId: number, userId: string): Promise<{ interesados: number }> {
     if (!userId) {
       throw new BadRequestException(EVENT_MESSAGES.USER_NOT_IDENTIFIED);
     }

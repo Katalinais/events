@@ -56,7 +56,7 @@ model Categoria {
 }
 
 model Usuario {
-  id        Int           @id @default(autoincrement())
+  id        String        @id @default(uuid())
   nombre    String
   apellido  String?
   correo    String?       @unique
@@ -71,7 +71,7 @@ model Usuario {
 
 model UsuarioInteresado {
   id        Int      @id @default(autoincrement())
-  usuarioId Int
+  usuarioId String
   eventoId  Int
   createdAt DateTime @default(now())
 
@@ -111,14 +111,12 @@ model EventoEntrada {
 }
 
 model Venta {
-  id         Int         @id @default(autoincrement())
-  usuarioId  Int
-  codigoQR   String      @unique @default(uuid())
-  total      Float       @default(0)
-  status     EstadoVenta @default(PENDIENTE)
-  errorMsg   String?
-  fechaVenta DateTime    @default(now())
-  createdAt  DateTime    @default(now())
+  id         Int      @id @default(autoincrement())
+  usuarioId  String
+  codigoQR   String   @unique @default(uuid())
+  total      Float
+  fechaVenta DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   usuario  Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   detalles DetalleBoleta[]

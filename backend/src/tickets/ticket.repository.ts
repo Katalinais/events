@@ -21,7 +21,7 @@ export class TicketRepository {
   }
 
   createTicketWithDetails(
-    userId: number,
+    userId: string,
     total: number,
     items: { eventEntryId: number; quantity: number; unitPrice: number; subtotal: number }[],
   ): Promise<Venta> {
@@ -70,7 +70,7 @@ export class TicketRepository {
     return result._sum.total ?? 0;
   }
 
-  findTicketsByUser(userId: number) {
+  findTicketsByUser(userId: string) {
     return this.prisma.venta.findMany({
       where: { usuarioId: userId },
       orderBy: { fechaVenta: 'desc' },
@@ -86,7 +86,7 @@ export class TicketRepository {
     });
   }
 
-  findPurchasesByUserAndEvent(userId: number, eventId: number) {
+  findPurchasesByUserAndEvent(userId: string, eventId: number) {
     return this.prisma.venta.findMany({
       where: {
         usuarioId: userId,
@@ -106,7 +106,7 @@ export class TicketRepository {
     });
   }
 
-  async findPurchaseQRsByUserAndEvent(userId: number, eventId: number): Promise<string[]> {
+  async findPurchaseQRsByUserAndEvent(userId: string, eventId: number): Promise<string[]> {
     const ventas = await this.prisma.venta.findMany({
       where: {
         usuarioId: userId,
@@ -117,7 +117,7 @@ export class TicketRepository {
     return ventas.map((v) => v.codigoQR);
   }
 
-  async findPurchasedEventsByUser(userId: number) {
+  async findPurchasedEventsByUser(userId: string) {
     const ventas = await this.prisma.venta.findMany({
       where: { usuarioId: userId },
       include: {

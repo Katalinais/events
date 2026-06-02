@@ -201,7 +201,7 @@ export class EventRepository {
     });
   }
 
-  findUsuarioInteresadosForUserFavorites(usuarioId: number) {
+  findUsuarioInteresadosForUserFavorites(usuarioId: string) {
     return this.prisma.usuarioInteresado.findMany({
       where: {
         usuarioId,
@@ -218,7 +218,7 @@ export class EventRepository {
     });
   }
 
-  createUsuarioInteresado(usuarioId: number, eventoId: number) {
+  createUsuarioInteresado(usuarioId: string, eventoId: number) {
     return this.prisma.usuarioInteresado.create({
       data: { usuarioId, eventoId },
     });
@@ -230,7 +230,7 @@ export class EventRepository {
     });
   }
 
-  deleteManyUsuarioInteresado(usuarioId: number, eventoId: number) {
+  deleteManyUsuarioInteresado(usuarioId: string, eventoId: number) {
     return this.prisma.usuarioInteresado.deleteMany({
       where: { usuarioId, eventoId },
     });
