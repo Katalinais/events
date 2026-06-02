@@ -1,0 +1,66 @@
+{
+  "title": "Consumer Logs",
+  "uid": "consumer-logs",
+  "version": 1,
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "All Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "showLabels": true, "wrapLogMessage": true },
+      "targets": [
+        {
+          "expr": "{app=\"consumer\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Errors & Warnings",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 10, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "showLabels": true, "wrapLogMessage": true },
+      "targets": [
+        {
+          "expr": "{app=\"consumer\"} |= \"error\" or {app=\"consumer\"} |= \"warn\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Messages Processed (rate/min)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "sum(rate({app=\"consumer\"} |= \"Message humanized\" [1m]))",
+          "refId": "A",
+          "legendFormat": "processed"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Errors rate/min",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "sum(rate({app=\"consumer\", level=\"error\"} [1m]))",
+          "refId": "A",
+          "legendFormat": "errors"
+        }
+      ]
+    }
+  ]
+}

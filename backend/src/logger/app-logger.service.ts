@@ -57,12 +57,20 @@ export class AppLogger implements LoggerService {
     this.logger.info(message, { context, traceId: getTraceId() });
   }
 
-  error(message: string, trace?: string, context?: string) {
-    this.logger.error(message, { context, traceId: getTraceId(), trace });
+  error(message: string, traceOrMeta?: string | Record<string, unknown>, context?: string) {
+    if (typeof traceOrMeta === 'string' || traceOrMeta === undefined) {
+      this.logger.error(message, { context, traceId: getTraceId(), trace: traceOrMeta });
+    } else {
+      this.logger.error(message, { traceId: getTraceId(), ...traceOrMeta });
+    }
   }
 
-  warn(message: string, context?: string) {
-    this.logger.warn(message, { context, traceId: getTraceId() });
+  warn(message: string, contextOrMeta?: string | Record<string, unknown>) {
+    if (typeof contextOrMeta === 'string') {
+      this.logger.warn(message, { context: contextOrMeta, traceId: getTraceId() });
+    } else {
+      this.logger.warn(message, { traceId: getTraceId(), ...contextOrMeta });
+    }
   }
 
   debug(message: string, context?: string) {
