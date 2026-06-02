@@ -27,9 +27,10 @@ type Step = "selection" | "billing" | "processing" | "success"
 type ProcessingStage = "payment" | "ai" | "done"
 
 const PURCHASE_STAGES = [
-  { key: "validating", label: "Validando disponibilidad" },
-  { key: "gateway",    label: "Verificando con la pasarela de pago" },
-  { key: "creating",   label: "Generando boletas" },
+  { key: "validating",  label: "Validando disponibilidad" },
+  { key: "connecting",  label: "Conectando con la pasarela de pagos" },
+  { key: "verifying",   label: "Verificando tarjeta" },
+  { key: "creating",    label: "Generando boletas" },
 ] as const
 type Network = "visa" | "mastercard" | "nu"
 
@@ -222,7 +223,11 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
             )}
             {step === "selection" && <Ticket className="h-5 w-5 text-primary" />}
             {step === "billing" && <CreditCard className="h-5 w-5 text-primary" />}
-            {step === "processing" && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+            {step === "processing" && (
+              processingStage === "done" && aiMessage?.type === "error"
+                ? <XCircle className="h-5 w-5 text-destructive" />
+                : <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            )}
             {step === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
             {stepTitles[step]}
           </DialogTitle>
@@ -416,11 +421,14 @@ export function PurchaseDialog({ open, onOpenChange, eventId, eventName, onReque
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-3">
               {PURCHASE_STAGES.map((s, i) => {
-                const isDone = processingStage !== "payment"
-                  ? true
-                  : i < reachedStageIndex
+                const hasError = processingStage === "done" && aiMessage?.type === "error"
+                const isDone = processingStage === "payment"
+                  ? i < reachedStageIndex
+                  : hasError
+                    ? i < reachedStageIndex
+                    : true
                 const isActive = processingStage === "payment" && i === reachedStageIndex
-                const isError = processingStage === "done" && aiMessage?.type === "error" && i === PURCHASE_STAGES.length - 1
+                const isError = hasError && i === reachedStageIndex
 
                 return (
                   <div key={s.key} className="flex items-center gap-3">
