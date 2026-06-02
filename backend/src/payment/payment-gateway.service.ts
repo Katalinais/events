@@ -41,8 +41,8 @@ export class PaymentGatewayService {
       throw new BadRequestException(TICKET_MESSAGES.PAYMENT_GATEWAY_UNREACHABLE);
     }
     if (!response.ok) {
-      const data: { message?: string } = await response.json().catch(() => ({}));
-      throw new BadRequestException(data.message ?? TICKET_MESSAGES.PAYMENT_GATEWAY_REJECTED);
+      const data: { error?: string } = await response.json().catch(() => ({}));
+      throw new BadRequestException(data.error ?? TICKET_MESSAGES.PAYMENT_GATEWAY_REJECTED);
     }
   }
 }
