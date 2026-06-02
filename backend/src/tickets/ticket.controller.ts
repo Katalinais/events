@@ -27,7 +27,7 @@ export class TicketController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Body() createTicketDto: CreateTicketDto,
-    @Req() req: Request & { user?: { userId: number } },
+    @Req() req: Request & { user?: { userId: string } },
   ) {
     const userId = req.user?.userId;
     if (userId == null) {
@@ -43,7 +43,7 @@ export class TicketController {
   }
 
   @Get('my')
-  findMyTickets(@Req() req: Request & { user?: { userId: number } }) {
+  findMyTickets(@Req() req: Request & { user?: { userId: string } }) {
     const userId = req.user?.userId;
     if (userId == null) {
       throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_MY_TICKETS);
@@ -52,7 +52,7 @@ export class TicketController {
   }
 
   @Get('my-events')
-  findMyEvents(@Req() req: Request & { user?: { userId: number } }) {
+  findMyEvents(@Req() req: Request & { user?: { userId: string } }) {
     const userId = req.user?.userId;
     if (userId == null) {
       throw new BadRequestException(TICKET_MESSAGES.LOGIN_REQUIRED_MY_TICKETS);
@@ -63,7 +63,7 @@ export class TicketController {
   @Get('my-events/:eventId/pdf')
   async getEventPdf(
     @Param('eventId', ParseIntPipe) eventId: number,
-    @Req() req: Request & { user?: { userId: number } },
+    @Req() req: Request & { user?: { userId: string } },
     @Res() res: Response,
   ) {
     const userId = req.user?.userId;
@@ -82,7 +82,7 @@ export class TicketController {
   @Get('my-events/:eventId/qr')
   async getEventQR(
     @Param('eventId', ParseIntPipe) eventId: number,
-    @Req() req: Request & { user?: { userId: number } },
+    @Req() req: Request & { user?: { userId: string } },
     @Res() res: Response,
   ) {
     const userId = req.user?.userId;
@@ -101,7 +101,7 @@ export class TicketController {
   @Get(':id/pdf')
   async downloadPdf(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: Request & { user?: { userId: number } },
+    @Req() req: Request & { user?: { userId: string } },
     @Res() res: Response,
   ) {
     const userId = req.user?.userId;

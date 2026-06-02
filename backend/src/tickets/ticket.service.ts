@@ -35,7 +35,7 @@ export class TicketService {
     private readonly logger: AppLogger,
   ) {}
 
-  async create(userId: number, dto: CreateTicketDto) {
+  async create(userId: string, dto: CreateTicketDto) {
     const purchaseItems: {
       eventEntryId: number;
       quantity: number;
@@ -45,6 +45,7 @@ export class TicketService {
 
     this.logger.info('Purchase started', { context: 'TicketService', userId, itemCount: dto.items.length });
     this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'validating' });
+
 
     for (const item of dto.items) {
       const entry = await this.ticketRepository.findTicketEntryById(item.eventEntryId);
@@ -74,18 +75,36 @@ export class TicketService {
 
     const total = purchaseItems.reduce((sum, i) => sum + i.subtotal, 0);
 
-    this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'gateway' });
+    this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'connecting' });
 
     try {
       await this.paymentGateway.charge({ ...dto.payment, amount: total });
     } catch (error) {
       const msg = extractMessage(error);
-      this.logger.error('Payment failed', undefined, 'TicketService');
-      this.logger.info('Payment error detail', { context: 'TicketService', userId, reason: msg });
+      const gatewayDown = msg === TICKET_MESSAGES.PAYMENT_GATEWAY_UNREACHABLE;
+
+      if (gatewayDown) {
+        this.logger.error('Payment gateway unreachable', {
+          context: 'TicketService',
+          userId,
+          amount: total,
+          network: dto.payment.network,
+        });
+      } else {
+        this.logger.warn('Payment rejected', {
+          context: 'TicketService',
+          userId,
+          amount: total,
+          network: dto.payment.network,
+          reason: msg,
+        });
+      }
+
       await this.purchaseProducer.publishPurchaseEvent({ type: 'error', text: msg, userId });
       throw error;
     }
 
+    this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'verifying' });
     this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'creating' });
 
     for (const item of purchaseItems) {
@@ -113,15 +132,15 @@ export class TicketService {
     return this.ticketRepository.getTotalEarnings();
   }
 
-  findByUser(userId: number) {
+  findByUser(userId: string) {
     return this.ticketRepository.findTicketsByUser(userId);
   }
 
-  findPurchasedEventsByUser(userId: number) {
+  findPurchasedEventsByUser(userId: string) {
     return this.ticketRepository.findPurchasedEventsByUser(userId);
   }
 
-  async generateEventPdf(userId: number, eventId: number): Promise<Buffer> {
+  async generateEventPdf(userId: string, eventId: number): Promise<Buffer> {
     const ventas = await this.ticketRepository.findPurchasesByUserAndEvent(userId, eventId);
     if (ventas.length === 0) {
       throw new NotFoundException(TICKET_MESSAGES.NO_PURCHASES_FOR_EVENT(eventId));
@@ -147,7 +166,7 @@ export class TicketService {
     });
   }
 
-  async generateEventQR(userId: number, eventId: number): Promise<Buffer> {
+  async generateEventQR(userId: string, eventId: number): Promise<Buffer> {
     const qrs = await this.ticketRepository.findPurchaseQRsByUserAndEvent(userId, eventId);
     if (qrs.length === 0) {
       throw new NotFoundException(TICKET_MESSAGES.NO_PURCHASES_FOR_EVENT(eventId));
@@ -156,7 +175,7 @@ export class TicketService {
     return generateQRBuffer(content);
   }
 
-  async generatePdf(ticketId: number, userId: number): Promise<Buffer> {
+  async generatePdf(ticketId: number, userId: string): Promise<Buffer> {
     const ticket = await this.ticketRepository.findTicketById(ticketId);
 
     if (!ticket) {

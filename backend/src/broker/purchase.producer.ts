@@ -5,7 +5,7 @@ import { Kafka, Producer } from 'kafkajs';
 export interface PurchaseEventPayload {
   type: 'success' | 'error';
   text: string;
-  userId: number;
+  userId: string;
 }
 
 @Injectable()
@@ -35,11 +35,11 @@ export class PurchaseProducer implements OnModuleInit, OnModuleDestroy {
       topic: 'messages',
       messages: [
         {
-          key: String(payload.userId),
+          key: payload.userId,
           value: JSON.stringify(payload),
         },
       ],
     });
-    this.logger.log(`Published purchase event [${payload.type}] for user ${payload.userId}`);
+    this.logger.debug(`Published purchase event [${payload.type}] for user ${payload.userId}`);
   }
 }

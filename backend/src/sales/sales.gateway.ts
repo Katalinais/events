@@ -42,7 +42,7 @@ export class SalesGateway implements OnGatewayConnection {
     }
   }
 
-  emitToUser(userId: number, event: string, data: unknown) {
+  emitToUser(userId: string, event: string, data: unknown) {
     this.server.to(`user-${userId}`).emit(event, data);
   }
 }

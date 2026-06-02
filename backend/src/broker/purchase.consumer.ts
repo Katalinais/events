@@ -6,7 +6,7 @@ import { SalesGateway } from '../sales/sales.gateway';
 interface PurchaseResultMessage {
   type: 'success' | 'error';
   message: string;
-  userId: number;
+  userId: string;
 }
 
 @Injectable()
