@@ -10,6 +10,7 @@ import { CACHE_KEYS } from '../shared/constants';
 import { PaymentGatewayService } from '../payment/payment-gateway.service';
 import { PurchaseProducer } from '../broker/purchase.producer';
 import { SalesGateway } from '../sales/sales.gateway';
+import { AppLogger } from '../logger/app-logger.service';
 
 function extractMessage(error: unknown): string {
   if (error instanceof HttpException) {
@@ -31,6 +32,7 @@ export class TicketService {
     private readonly paymentGateway: PaymentGatewayService,
     private readonly purchaseProducer: PurchaseProducer,
     private readonly salesGateway: SalesGateway,
+    private readonly logger: AppLogger,
   ) {}
 
   async create(userId: number, dto: CreateTicketDto) {
@@ -41,6 +43,7 @@ export class TicketService {
       subtotal: number;
     }[] = [];
 
+    this.logger.info('Purchase started', { context: 'TicketService', userId, itemCount: dto.items.length });
     this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'validating' });
 
     for (const item of dto.items) {
@@ -76,11 +79,10 @@ export class TicketService {
     try {
       await this.paymentGateway.charge({ ...dto.payment, amount: total });
     } catch (error) {
-      await this.purchaseProducer.publishPurchaseEvent({
-        type: 'error',
-        text: extractMessage(error),
-        userId,
-      });
+      const msg = extractMessage(error);
+      this.logger.error('Payment failed', undefined, 'TicketService');
+      this.logger.info('Payment error detail', { context: 'TicketService', userId, reason: msg });
+      await this.purchaseProducer.publishPurchaseEvent({ type: 'error', text: msg, userId });
       throw error;
     }
 
@@ -97,6 +99,7 @@ export class TicketService {
     );
     this.cacheService.invalidate(CACHE_KEYS.TOP_SELLING_EVENTS);
 
+    this.logger.info('Purchase completed', { context: 'TicketService', userId, ticketId: result.id, total });
     await this.purchaseProducer.publishPurchaseEvent({
       type: 'success',
       text: `Compra exitosa por $${total}`,
