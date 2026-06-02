@@ -35,7 +35,7 @@ export class PurchaseProducer implements OnModuleInit, OnModuleDestroy {
       topic: 'messages',
       messages: [
         {
-          key: payload.userId,
+          key: String(payload.userId),
           value: JSON.stringify(payload),
         },
       ],
