@@ -91,6 +91,8 @@ export class TicketService {
           network: dto.payment.network,
         });
       } else {
+        // Conexión exitosa — el gateway respondió pero rechazó el pago
+        this.salesGateway.emitToUser(userId, 'purchase:stage', { stage: 'verifying' });
         this.logger.warn('Payment rejected', {
           context: 'TicketService',
           userId,
