@@ -19,6 +19,13 @@ enum EstadoEvento {
   CANCELADO
 }
 
+enum EstadoVenta {
+  PENDIENTE
+  PROCESANDO
+  COMPLETADA
+  FALLIDA
+}
+
 model Evento {
   id          Int          @id @default(autoincrement())
   nombre      String
